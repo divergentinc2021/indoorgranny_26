@@ -17,9 +17,22 @@ export default function SensorsScreen() {
   const devices = useSettings((s) => s.devices);
   // pair() on an occupied slot disconnects the old device before the picker opens, so ask first.
   const [confirming, setConfirming] = useState<Slot | null>(null);
+  const [menu, setMenu] = useState(false);
+  const startPair = (slot: Slot) => (devices[slot] ? setConfirming(slot) : void pair(slot));
   const v = { ...values, speedMs: values.speed };
   return (
-    <Shell title="Sensors">
+    <Shell title="Sensors" bare action={(
+      <div className="relative">
+        <button type="button" className="h-[56px] w-[48px] text-[28px] font-bold leading-none text-white" aria-label="Sensor menu" aria-haspopup="true" aria-expanded={menu} onClick={() => setMenu(!menu)}>{'⋮'}</button>
+        {menu && (
+          <div role="menu" className="absolute right-0 top-[56px] z-20 w-[300px] max-w-[88vw] bg-[#fafafa] text-[#212121] shadow-lg">
+            <div className="px-[20px] py-[14px] text-[26px] font-bold text-[#595c6b]">Sensor Configuration</div>
+            {SLOTS.map(({ slot, label }) => <button key={slot} type="button" role="menuitem" aria-label={`Menu: pair ${label}`} className="block w-full text-left px-[20px] py-[14px] text-[26px] font-bold leading-tight" onClick={() => { setMenu(false); startPair(slot); }}>Pair {label}</button>)}
+          </div>
+        )}
+      </div>
+    )}>
+      <div className="flex-1 p-[10px]">
       {!BleAdapter.available() && <p className="mb-3 text-sm font-bold">Web Bluetooth is not available here. Use Chrome on Android (6.0 or newer).</p>}
       <ul>
         {SLOTS.map(({ slot, label, value }) => {
@@ -32,7 +45,7 @@ export default function SensorsScreen() {
           return (
             <li key={slot} className="flex items-start m-[10px]">
               {/* Vendor card: 60 px square button (cyan, green when connected) + white round_border info panel. */}
-              <button className={`flex-shrink-0 w-[60px] h-[60px] border-2 border-gg-bg rounded-[15px] text-[12px] ${on ? 'bg-gg-on text-black' : 'bg-gg-strip text-white'}`} onClick={() => (d ? setConfirming(slot) : void pair(slot))} aria-label={`Pair ${label}`}>{d ? 'Pair again' : 'Pair'}</button>
+              <button className={`flex-shrink-0 w-[60px] h-[60px] border-2 border-gg-bg rounded-[15px] text-[12px] ${on ? 'bg-gg-on text-black' : 'bg-gg-strip text-white'}`} onClick={() => startPair(slot)} aria-label={`Pair ${label}`}>{d ? 'Pair again' : 'Pair'}</button>
               <div className="flex-1 ml-[10px] min-w-0 bg-white text-black border-2 border-gg-bg rounded-[15px] p-[5px] text-[12px]">
                 <div className="flex items-center justify-between"><span className="font-bold text-[14px] text-gg-bg">{label}</span><span className={on ? 'bg-gg-on px-1' : ''}>{states[slot]}</span></div>
                 <div className="flex items-center justify-between mt-1">
@@ -54,7 +67,12 @@ export default function SensorsScreen() {
           );
         })}
       </ul>
-      <button className="mt-4 w-full bg-gg-strip text-white text-[20px] border-2 border-gg-bg rounded-[15px] py-2" onClick={() => void reconnectAll()}>Reconnect all</button>
+      </div>
+      {/* Vendor bottom bar: full-width cyan action, dark "Sensors" block at the right. */}
+      <div className="sticky bottom-0 flex">
+        <button className="flex-1 bg-gg-strip text-white text-[28px] font-bold py-3" aria-label="Reconnect all" onClick={() => void reconnectAll()}>Reconnect sensors</button>
+        <div className="flex-shrink-0 w-[120px] flex items-center justify-center bg-gg-bg text-white text-[16px] font-bold">Sensors</div>
+      </div>
     </Shell>
   );
 }

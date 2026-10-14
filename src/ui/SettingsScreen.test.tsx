@@ -1,7 +1,9 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import SettingsScreen from './SettingsScreen';
 import { useSettings } from '../app/settings-store';
+import { useRiders } from '../app/rider-store';
+import { newRider } from '../data/riders';
 describe('SettingsScreen', () => {
   it('exposes the vendor keys and writes them to the store', () => {
     render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
@@ -28,5 +30,26 @@ describe('SettingsScreen', () => {
     fireEvent.blur(input); // out of range -> restored to the stored value
     expect(input.value).toBe('2096');
     expect(screen.getByText('1500–4000 mm')).toBeInTheDocument();
+  });
+  it('shows the vendor titles; rider rows are disabled until a rider is chosen', () => {
+    useRiders.setState({ riders: [], currentId: null });
+    render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
+    for (const t of ['Personal Settings', 'Automatic sync', 'Choose your units', 'Weight', 'FTP', 'W Prime', 'Countdown Timer', 'Smoothing Power']) expect(screen.getByText(t)).toBeInTheDocument();
+    expect(screen.getAllByText('choose a rider first')).toHaveLength(3);
+    expect(screen.getByRole('button', { name: /^Weight/ })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: /automatic sync/i })).toBeDisabled();
+  });
+  it('edits the current rider weight inline and saves it through the rider store', async () => {
+    const rider = newRider({ name: 'Ann', email: 'a@x.za', weightKg: 85, ftpW: 227, wprimeKj: 20 });
+    const save = vi.fn(async () => {});
+    useRiders.setState({ riders: [rider], currentId: rider.id, save });
+    render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
+    expect(screen.getByText('weight equal to 85.0 kg')).toBeInTheDocument();
+    expect(screen.getByText('Functional Threshold Power: 227Watts')).toBeInTheDocument();
+    expect(screen.getByText('WP: 20KJ')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Weight/ }));
+    fireEvent.change(screen.getByLabelText('Weight (kg)'), { target: { value: '82.5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(save).toHaveBeenCalledWith({ ...rider, weightKg: 82.5 }));
   });
 });

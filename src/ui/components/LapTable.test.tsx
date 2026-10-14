@@ -11,7 +11,7 @@ describe('LapTable', () => {
     const headers = screen.getAllByRole('columnheader').map((h) => h.textContent);
     expect(headers).toEqual(['Lap', 'Time', 'Avg Speed', 'Distance', 'Avg Power', 'Avg HR', '%dif HR', 'Avg CAD']);
     const cells = screen.getAllByRole('row').map((r) => r.textContent);
-    expect(cells[1]).toContain('NOW'); expect(cells[2]).toContain('2'); expect(cells[2]).toContain('+10.0%');
+    expect(cells[1]).toContain('now'); expect(cells[2]).toContain('2'); expect(cells[2]).toContain('+10.0%');
     expect(screen.getAllByRole('row')[2].className).toContain('z4'); // 260 W at FTP 250 -> zone index 3 -> z4
   });
 });

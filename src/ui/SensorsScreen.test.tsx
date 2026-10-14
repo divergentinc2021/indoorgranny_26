@@ -75,4 +75,17 @@ describe('SensorsScreen', () => {
     render(<MemoryRouter><SensorsScreen /></MemoryRouter>);
     expect(screen.getByText(/web bluetooth is not available/i)).toBeInTheDocument();
   });
+  it('top-right menu lists Sensor Configuration and pairs through the same flow', () => {
+    render(<MemoryRouter><SensorsScreen /></MemoryRouter>);
+    expect(screen.queryByText('Sensor Configuration')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Sensor menu' }));
+    expect(screen.getByText('Sensor Configuration')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Menu: pair Heart rate' }));
+    expect(pair).toHaveBeenCalledWith('hr');
+    expect(screen.queryByText('Sensor Configuration')).not.toBeInTheDocument();
+  });
+  it('bottom bar reads Reconnect sensors with the Reconnect all label', () => {
+    render(<MemoryRouter><SensorsScreen /></MemoryRouter>);
+    expect(screen.getByRole('button', { name: 'Reconnect all' })).toHaveTextContent('Reconnect sensors');
+  });
 });

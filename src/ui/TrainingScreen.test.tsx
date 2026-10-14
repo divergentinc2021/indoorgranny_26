@@ -43,4 +43,25 @@ describe('TrainingScreen', () => {
     expect(screen.getAllByText('avg 0 · max 0')).toHaveLength(3);
     expect(document.body.textContent).not.toContain('�');
   });
+  it('phone layout (412 px): charts hidden, grey START in a navy band, cyan lap area, bar with SIGN OUT', () => {
+    const was = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 412 });
+    try {
+      render(<MemoryRouter><TrainingScreen /></MemoryRouter>);
+      // jsdom does not apply the stylesheet, so assert the classes that produce the computed styles.
+      expect(screen.getByTestId('charts')).toHaveClass('hidden', 'tab:block');
+      const start = screen.getByRole('button', { name: /^start$/i });
+      expect(start).toHaveClass('bg-gg-btn', 'text-black', 'font-bold', 'uppercase');
+      expect(start.closest('div.bg-gg-bg')).not.toBeNull();
+      const lapArea = screen.getByRole('table').parentElement!;
+      expect(lapArea).toHaveClass('flex-1', 'min-h-0', 'bg-gg-strip');
+      expect(screen.getByText('now')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'SIGN OUT' })).toHaveAttribute('href', '/rider');
+      // Phone bottom row carries Wbal; the tablet-only tiles (%FTP, Speed) sit in hidden/tab:grid containers.
+      expect(screen.getByText(/Wbal/)).toBeInTheDocument();
+      expect(screen.getByText('%FTP').closest('div.hidden')).not.toBeNull();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: was });
+    }
+  });
 });

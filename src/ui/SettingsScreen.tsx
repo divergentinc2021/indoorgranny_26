@@ -1,23 +1,96 @@
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import Shell from './Shell';
 import { useSettings } from '../app/settings-store';
+import { useRiders } from '../app/rider-store';
 import pkg from '../../package.json';
+
+// Vendor preference list (docs/reference/vendor-screenshots/06-settings.jpg): dark page, teal category header, white bold
+// titles over grey summaries, 40 px indent, controls right-aligned.
+const ROW = 'flex items-center py-[14px] pl-[40px] pr-[16px]';
+const TITLE = 'block text-[26px] font-bold leading-tight text-white';
+const SUMMARY = 'block text-[24px] font-bold leading-tight text-gg-summary';
+const CTRL = 'ml-3 flex-shrink-0 bg-gg-pref text-white border border-gg-summary px-2 py-1 text-[18px]';
+
+type RiderField = 'weightKg' | 'ftpW' | 'wprimeKj';
+const FIELDS: Record<RiderField, { title: string; unit: string; label: string }> = {
+  weightKg: { title: 'Weight', unit: 'kg', label: 'Weight (kg)' },
+  ftpW: { title: 'FTP', unit: 'W', label: 'FTP (W)' },
+  wprimeKj: { title: 'W Prime', unit: 'kJ', label: "W' (kJ)" },
+};
+
 export default function SettingsScreen() {
   const s = useSettings();
+  const rider = useRiders((st) => st.current());
+  const saveRider = useRiders((st) => st.save);
   const [wheelDraft, setWheelDraft] = useState(String(s.wheelMm));
+  const [editing, setEditing] = useState<RiderField | null>(null);
+  const [draft, setDraft] = useState('');
   const wheelOk = (v: string) => { const n = Number(v); return v.trim() !== '' && Number.isFinite(n) && n >= 1500 && n <= 4000; };
-  const sel = (id: string, label: string, value: string | number, opts: [string | number, string][], on: (v: string) => void) => (
-    <label className="block text-sm" htmlFor={id}>{label}<select id={id} className="mt-1 w-full bg-white text-black border border-gg-bg px-2 py-1" value={String(value)} onChange={(e) => on(e.target.value)}>{opts.map(([v, l]) => <option key={String(v)} value={String(v)}>{l}</option>)}</select></label>
+  const sel = (id: string, label: string, title: string, summary: string, value: string | number, opts: [string | number, string][], on: (v: string) => void) => (
+    <div className={ROW}>
+      <div className="flex-1 min-w-0"><span className={TITLE}>{title}</span><span className={SUMMARY}>{summary}</span></div>
+      <label htmlFor={id} className="sr-only">{label}</label>
+      <select id={id} className={CTRL} value={String(value)} onChange={(e) => on(e.target.value)}>{opts.map(([v, l]) => <option key={String(v)} value={String(v)}>{l}</option>)}</select>
+    </div>
   );
+  const summaryOf = (f: RiderField): string => {
+    if (!rider) return 'choose a rider first';
+    if (f === 'weightKg') return `weight equal to ${rider.weightKg.toFixed(1)} kg`;
+    if (f === 'ftpW') return `Functional Threshold Power: ${rider.ftpW}Watts`;
+    return `WP: ${rider.wprimeKj}KJ`;
+  };
+  const commit = async (f: RiderField) => {
+    const n = Number(draft);
+    if (!rider || !Number.isFinite(n) || n <= 0) return;
+    // Keep CP following FTP, as the rider screen does when it is blank.
+    await saveRider({ ...rider, [f]: n, ...(f === 'ftpW' && rider.cpW === rider.ftpW ? { cpW: n } : {}) });
+    setEditing(null);
+  };
+  const riderRow = (f: RiderField): ReactNode => {
+    const { title, label } = FIELDS[f];
+    const open = editing === f && !!rider;
+    return (
+      <div>
+        <button type="button" className={`${ROW} w-full text-left disabled:opacity-60`} disabled={!rider} aria-expanded={open} onClick={() => { setDraft(rider ? String(rider[f]) : ''); setEditing(open ? null : f); }}>
+          <span className="flex-1 min-w-0"><span className={TITLE}>{title}</span><span className={SUMMARY}>{summaryOf(f)}</span></span>
+        </button>
+        {open && (
+          <form className="flex items-center pl-[40px] pr-[16px] pb-[14px]" onSubmit={(e) => { e.preventDefault(); void commit(f); }}>
+            <input aria-label={label} type="number" inputMode="decimal" step="any" min={0} autoFocus className="flex-1 min-w-0 bg-white text-black text-[24px] px-2 py-1" value={draft} onChange={(e) => setDraft(e.target.value)} />
+            <button type="submit" className="ml-2 bg-gg-btn text-black font-bold text-[20px] px-4 py-2">OK</button>
+            <button type="button" className="ml-2 bg-gg-btn text-black text-[20px] px-4 py-2" onClick={() => setEditing(null)}>Cancel</button>
+          </form>
+        )}
+      </div>
+    );
+  };
+  const countdown = s.countdownS < 3600 ? `${s.countdownS}s` : `${s.countdownS / 3600} h`;
   return (
-    <Shell title="Settings">
-      <div className="space-y-4">
-        {sel('unit', 'Unit system', s.unitSystem, [['metric', 'Metric'], ['imperial', 'Imperial']], (v) => s.set({ unitSystem: v as 'metric' | 'imperial' }))}
-        {sel('countdown', 'Countdown before start', s.countdownS, [[0, 'None'], [5, '5 seconds'], [3600, '1 hour'], [7200, '2 hours'], [10800, '3 hours']], (v) => s.set({ countdownS: Number(v) as 0 | 5 | 3600 | 7200 | 10800 }))}
-        {sel('smoothing', 'Power smoothing', s.smoothingN, [[1, 'Off'], [5, '5 s'], [10, '10 s'], [30, '30 s']], (v) => s.set({ smoothingN: Number(v) as 1 | 5 | 10 | 30 }))}
-        <label className="block text-sm" htmlFor="wheel">Wheel circumference (mm)<input id="wheel" type="number" inputMode="numeric" min={1500} max={4000} className="mt-1 w-full bg-white text-black border border-gg-bg px-2 py-1" value={wheelDraft} onChange={(e) => { const v = e.target.value; setWheelDraft(v); if (wheelOk(v)) s.set({ wheelMm: Number(v) }); }} onBlur={() => { if (!wheelOk(wheelDraft)) setWheelDraft(String(s.wheelMm)); }} /><span className="block text-xs mt-1">1500–4000 mm</span></label>
-        <label className="flex items-center text-sm"><input type="checkbox" className="mr-2" checked={s.structuredWorkoutEnabled} onChange={(e) => s.set({ structuredWorkoutEnabled: e.target.checked })} />Structured workout panel (tablets)</label>
-        <p className="text-sm">Recording interval: 1 s · App version {pkg.version}</p>
+    <Shell title="Settings" tone="pref" bare>
+      <div className="pb-6">
+        <h2 className="pt-[24px] pb-[10px] pl-[40px] text-[24px] font-bold text-gg-cat">Personal Settings</h2>
+        <label className={ROW}>
+          <span className="flex-1 min-w-0"><span className={TITLE}>Automatic sync</span><span className={SUMMARY}>Automatically save your activities on Strava</span></span>
+          <input type="checkbox" className="ml-3 flex-shrink-0 w-6 h-6" disabled aria-label="Automatic sync (available in a later phase)" checked={false} readOnly />
+        </label>
+        {sel('unit', 'Unit system', 'Choose your units', s.unitSystem, s.unitSystem, [['metric', 'Metric'], ['imperial', 'Imperial']], (v) => s.set({ unitSystem: v as 'metric' | 'imperial' }))}
+        {riderRow('weightKg')}
+        {riderRow('ftpW')}
+        {riderRow('wprimeKj')}
+        {sel('countdown', 'Countdown before start', 'Countdown Timer', `delay before start: ${countdown}`, s.countdownS, [[0, 'None'], [5, '5 seconds'], [3600, '1 hour'], [7200, '2 hours'], [10800, '3 hours']], (v) => s.set({ countdownS: Number(v) as 0 | 5 | 3600 | 7200 | 10800 }))}
+        {sel('smoothing', 'Power smoothing', 'Smoothing Power', s.smoothingN === 1 ? 'off' : `average over ${s.smoothingN} s`, s.smoothingN, [[1, 'Off'], [5, '5 s'], [10, '10 s'], [30, '30 s']], (v) => s.set({ smoothingN: Number(v) as 1 | 5 | 10 | 30 }))}
+        <label className={ROW} htmlFor="wheel">
+          <span className="flex-1 min-w-0"><span className={TITLE}>Wheel circumference (mm)</span><span className={SUMMARY}>1500–4000 mm</span></span>
+          <input id="wheel" type="number" inputMode="numeric" min={1500} max={4000} className={`${CTRL} w-[110px] bg-white text-black`} value={wheelDraft} onChange={(e) => { const v = e.target.value; setWheelDraft(v); if (wheelOk(v)) s.set({ wheelMm: Number(v) }); }} onBlur={() => { if (!wheelOk(wheelDraft)) setWheelDraft(String(s.wheelMm)); }} />
+        </label>
+        <label className={ROW}>
+          <span className="flex-1 min-w-0"><span className={TITLE}>Structured workout panel</span><span className={SUMMARY}>show the workout while riding (tablets)</span></span>
+          <input type="checkbox" className="ml-3 flex-shrink-0 w-6 h-6" checked={s.structuredWorkoutEnabled} onChange={(e) => s.set({ structuredWorkoutEnabled: e.target.checked })} />
+        </label>
+        <div className={ROW}>
+          <div className="flex-1 min-w-0"><span className={TITLE}>App version</span><span className={SUMMARY}>{pkg.version} · recording interval 1 s</span></div>
+        </div>
       </div>
     </Shell>
   );

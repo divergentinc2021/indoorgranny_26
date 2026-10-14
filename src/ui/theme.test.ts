@@ -14,6 +14,15 @@ describe('vendor palette tokens', () => {
     expect(colors.gg.paper).toBe('#ffffff');
   });
 
+  it('exposes the phone-screenshot colours', () => {
+    expect(colors.gg.bar).toBe('#1f1f1f');
+    expect(colors.gg.btn).toBe('#d6d6d6');
+    expect(colors.gg.pref).toBe('#212121');
+    expect(colors.gg.cat).toBe('#17c8aa');
+    expect(colors.gg.summary).toBe('#9e9e9e');
+    expect(colors.gg.dlg).toBe('#0a0a0a');
+  });
+
   it('maps zones 1..7 to the vendor lap-row fills', () => {
     expect([1, 2, 3, 4, 5, 6, 7].map((n) => colors.zone[`z${n}`])).toEqual(
       ['#7adac6', '#0eef2c', '#abebcb', '#ffff00', '#e6e600', '#ffb872', '#ff8787'],
