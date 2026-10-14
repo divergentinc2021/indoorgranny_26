@@ -36,7 +36,7 @@ Deferred to later phases (do not build hooks for them beyond what is noted):
 - `vite-plugin-pwa` for service worker + manifest (static assets stale-while-revalidate; nothing under `/api` is cached, even though phase 1 has no API).
 - Vitest for unit tests.
 - Build target `chrome81` (last Chrome for Android 4.4, the studio tablets). No syntax or API newer than that in the shipped bundle.
-- Fonts: Poppins (headings) + Inter (body), loaded via `<link>`, not CSS `@import` (Tailwind v4 ordering trap).
+- Fonts: system Roboto stack (vendor parity); no web fonts.
 
 Engine and parsers live in plain TS modules with no React imports so they are testable and reusable by the later ANT transports.
 

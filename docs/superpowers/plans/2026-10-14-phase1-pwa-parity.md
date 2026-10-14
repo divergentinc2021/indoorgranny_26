@@ -16,7 +16,7 @@
 - Engine (`src/engine/**`) and parsers (`src/sensors/ble/parse/**`, `src/sensors/ble/derive.ts`) import nothing from React or the DOM.
 - Parsers return `null` on malformed input, never throw.
 - Vendor formulas verbatim (spec §5); the one deviation is W'bal CP = rider `cpW` (fallback FTP).
-- Fonts Poppins (headings) + Inter (body) via `<link>` in `index.html`, never CSS `@import`.
+- Fonts: system Roboto stack (vendor parity); no web fonts.
 - Licence MIT; third-party licences listed in `THIRD_PARTY.md`.
 - Cloudflare Pages project `indoorgranny-26`, account `7ad30a1a3e8b2d10900133e234c03948`, git-connected, production branch `main`, build `npm run build`, output `dist`.
 - Commit after every task with the attribution line `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
