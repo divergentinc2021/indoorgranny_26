@@ -7,13 +7,13 @@ import { useRiders } from './rider-store';
 import { useSettings } from './settings-store';
 import { useSensors } from './sensor-store';
 
-interface S { engine: RideEngine | null; view: RideView | null; state: RideState; lapRows: LapRow[]; countdownLeft: number | null; begin(): void; pause(): void; resume(): void; lap(): void; stop(): void; save(): Promise<SessionRecord>; discard(): void }
+interface S { engine: RideEngine | null; view: RideView | null; state: RideState; lapRows: LapRow[]; countdownLeft: number | null; begin(opts?: { skipCountdown?: boolean }): void; pause(): void; resume(): void; lap(): void; stop(): void; save(): Promise<SessionRecord>; discard(): void }
 let timer: ReturnType<typeof setInterval> | null = null;
 const clear = () => { if (timer) clearInterval(timer); timer = null; };
 
 export const useRide = create<S>((set, get) => ({
   engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null,
-  begin: () => {
+  begin: (opts) => {
     if (get().state === 'recording' || get().state === 'paused') return;
     const rider = useRiders.getState().current();
     const st = useSettings.getState();
@@ -24,7 +24,7 @@ export const useRide = create<S>((set, get) => ({
       clear();
       timer = setInterval(() => { engine.tick(useSensors.getState().live.snapshot(Date.now())); set({ view: engine.view, state: engine.state }); }, 1000);
     };
-    if (st.countdownS > 0) {
+    if (st.countdownS > 0 && !opts?.skipCountdown) {
       set({ countdownLeft: st.countdownS });
       clear();
       timer = setInterval(() => { const left = (get().countdownLeft ?? 1) - 1; if (left <= 0) run(); else set({ countdownLeft: left }); }, 1000);
