@@ -34,4 +34,34 @@ describe('ride store partial flush', () => {
     await vi.advanceTimersByTimeAsync(10000);
     expect(spy).toHaveBeenCalledTimes(2);
   });
+  it('surfaces a failed partial flush as storageError, cleared by the next begin()', async () => {
+    vi.spyOn(sessionsModule, 'saveSession').mockRejectedValue(new Error('quota'));
+    useSettings.getState().set({ countdownS: 0 });
+    useRide.getState().begin();
+    expect(useRide.getState().storageError).toBeNull();
+    await vi.advanceTimersByTimeAsync(10000);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(useRide.getState().storageError).toBe('history not saved');
+    useRide.getState().discard();
+    useRide.getState().begin();
+    expect(useRide.getState().storageError).toBeNull();
+  });
+  it('surfaces a failed discard-delete as storageError', async () => {
+    vi.spyOn(sessionsModule, 'deleteSession').mockRejectedValue(new Error('locked'));
+    useSettings.getState().set({ countdownS: 0 });
+    useRide.getState().begin();
+    await vi.advanceTimersByTimeAsync(2000);
+    useRide.getState().stop(); useRide.getState().discard();
+    for (let i = 0; i < 50 && !useRide.getState().storageError; i++) await new Promise((r) => setTimeout(r, 5));
+    expect(useRide.getState().storageError).toBe('history not saved');
+  });
+  it('discarding during the countdown cancels it for good', async () => {
+    useSettings.getState().set({ countdownS: 5 });
+    useRide.getState().begin();
+    expect(useRide.getState().countdownLeft).toBe(5);
+    useRide.getState().discard();
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(useRide.getState().state).toBe('idle');
+    expect(useRide.getState().engine).toBeNull();
+  });
 });

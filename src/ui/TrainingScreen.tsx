@@ -35,6 +35,8 @@ export default function TrainingScreen() {
   const riding = ride.state === 'recording' || ride.state === 'paused';
   useWakeLock(riding);
   useEffect(() => { void reconnectAll(); }, [reconnectAll]);
+  // Leaving during the countdown must cancel it, or a ghost ride would start (and record) with the screen gone.
+  useEffect(() => () => { const s = useRide.getState(); if (s.countdownLeft !== null) s.discard(); }, []);
   useEffect(() => {
     if (!riding) return;
     const onPop = () => { history.pushState(null, '', location.href); alert('Stop the activity first.'); };
@@ -56,6 +58,7 @@ export default function TrainingScreen() {
       {ride.countdownLeft !== null && <CountdownModal left={ride.countdownLeft} onSkip={() => { ride.discard(); ride.begin({ skipCountdown: true }); }} />}
       {confirmStop && <Dialog text="STOP this session?" yes="Yes, stop" onYes={() => { setConfirmStop(false); ride.stop(); setAskSave(true); }} onNo={() => setConfirmStop(false)} />}
       {askSave && <Dialog text="Do you want to save it?" yes="Save" no="Discard" onYes={async () => { setAskSave(false); await ride.save(); setHist(EMPTY_HIST); nav('/logs'); }} onNo={() => { setAskSave(false); ride.discard(); setHist(EMPTY_HIST); }} />}
+      {ride.storageError && <div role="alert" className="bg-white text-red-700 font-bold text-[16px] px-2 py-1">History not saved — retry on Stop</div>}
       <div className="hidden tab:block text-[14px] text-white px-1 mb-1">Rider: {rider?.name ?? 'Guest'}</div>
       <Tile size="bare" label="Elapsed" value={fmtClock(v?.elapsedS ?? 0)} sub={`lap ${fmtDuration(v?.lapS ?? 0)}${v?.prevLapS != null ? ` · prev ${fmtDuration(v.prevLapS)}` : ''}`} />
       <div className="grid grid-cols-3">

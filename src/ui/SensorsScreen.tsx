@@ -13,13 +13,19 @@ const SLOTS: { slot: Slot; label: string; value: (v: Record<string, number | und
 ];
 
 export default function SensorsScreen() {
-  const { states, messages, values, pair, forget, reconnectAll } = useSensors();
+  const { states, messages, values, pair, forget, reconnectAll, adapter } = useSensors();
   const devices = useSettings((s) => s.devices);
   // pair() on an occupied slot disconnects the old device before the picker opens, so ask first.
   const [confirming, setConfirming] = useState<Slot | null>(null);
   const [menu, setMenu] = useState(false);
   const startPair = (slot: Slot) => (devices[slot] ? setConfirming(slot) : void pair(slot));
   const v = { ...values, speedMs: values.speed };
+  // A remembered device with no live object can only be reopened through the browser chooser, which needs this tap as its user gesture.
+  // The browser allows one chooser per tap, so the first such slot gets it and the rest reconnect normally.
+  const reconnect = () => {
+    const slot = SLOTS.map((x) => x.slot).find((s) => devices[s] && states[s] === 'offline' && adapter.needsChooser(s));
+    if (slot) { void pair(slot); void reconnectAll([slot]); } else void reconnectAll();
+  };
   return (
     <Shell title="Sensors" bare action={(
       <div className="relative">
@@ -70,7 +76,7 @@ export default function SensorsScreen() {
       </div>
       {/* Vendor bottom bar: full-width cyan action, dark "Sensors" block at the right. */}
       <div className="sticky bottom-0 flex">
-        <button className="flex-1 bg-gg-strip text-white text-[28px] font-bold py-3" aria-label="Reconnect all" onClick={() => void reconnectAll()}>Reconnect sensors</button>
+        <button className="flex-1 bg-gg-strip text-white text-[28px] font-bold py-3" aria-label="Reconnect all" onClick={reconnect}>Reconnect sensors</button>
         <div className="flex-shrink-0 w-[120px] flex items-center justify-center bg-gg-bg text-white text-[16px] font-bold">Sensors</div>
       </div>
     </Shell>

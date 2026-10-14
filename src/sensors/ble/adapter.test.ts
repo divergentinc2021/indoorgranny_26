@@ -122,4 +122,41 @@ describe('BleAdapter connection lifecycle', () => {
     await a.pair('hr');
     expect(order).toEqual(['start', 'listen']);
   });
+
+  describe('connect without a device object', () => {
+    const d: PairedDevice = { slot: 'hr', id: 'dev-1', name: 'Fake HRM' };
+    const msgs = (a: BleAdapter) => { const out: [SensorState, string | undefined][] = []; a.onState((_s, st, m) => out.push([st, m])); return out; };
+    it('reports offline with the chooser hint when getDevices is unavailable', async () => {
+      const bt = { requestDevice: vi.fn() } as unknown as Bluetooth;
+      const a = new BleAdapter({ circumferenceMm: () => 2096, bluetooth: bt });
+      const out = msgs(a);
+      await a.connect(d);
+      expect(out).toEqual([['offline', 'Tap Reconnect to choose the device again']]);
+      expect(a.needsChooser('hr')).toBe(true);
+      expect(bt.requestDevice).not.toHaveBeenCalled();
+    });
+    it('reports the same when getDevices returns nothing', async () => {
+      const bt = { requestDevice: vi.fn(), getDevices: vi.fn(async () => []) } as unknown as Bluetooth;
+      const a = new BleAdapter({ circumferenceMm: () => 2096, bluetooth: bt });
+      const out = msgs(a);
+      await a.connect(d);
+      expect(out).toEqual([['offline', 'Tap Reconnect to choose the device again']]);
+      expect(a.needsChooser('hr')).toBe(true);
+    });
+    it('keeps the chooser flag when the user cancels the chooser', async () => {
+      const bt = { requestDevice: vi.fn(async () => { throw new Error('User cancelled'); }) } as unknown as Bluetooth;
+      const a = new BleAdapter({ circumferenceMm: () => 2096, bluetooth: bt });
+      await a.connect(d);
+      await expect(a.pair('hr')).rejects.toThrow('User cancelled');
+      expect(a.needsChooser('hr')).toBe(true);
+    });
+    it('clears the chooser flag once pair() succeeds', async () => {
+      const f = fakeBluetooth({ dispatchOnDisconnect: false });
+      const a = new BleAdapter({ circumferenceMm: () => 2096, bluetooth: { requestDevice: f.bt.requestDevice } as unknown as Bluetooth });
+      await a.connect(d);
+      expect(a.needsChooser('hr')).toBe(true);
+      await a.pair('hr');
+      expect(a.needsChooser('hr')).toBe(false);
+    });
+  });
 });

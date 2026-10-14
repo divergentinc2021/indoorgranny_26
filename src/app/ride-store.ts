@@ -8,10 +8,11 @@ import type { Rider } from '../data/riders';
 import { useSettings } from './settings-store';
 import { useSensors } from './sensor-store';
 
-interface S { engine: RideEngine | null; view: RideView | null; state: RideState; lapRows: LapRow[]; countdownLeft: number | null; begin(opts?: { skipCountdown?: boolean }): void; pause(): void; resume(): void; lap(): void; stop(): void; save(): Promise<SessionRecord>; discard(): void }
+interface S { storageError: string | null; engine: RideEngine | null; view: RideView | null; state: RideState; lapRows: LapRow[]; countdownLeft: number | null; begin(opts?: { skipCountdown?: boolean }): void; pause(): void; resume(): void; lap(): void; stop(): void; save(): Promise<SessionRecord>; discard(): void }
 let timer: ReturnType<typeof setInterval> | null = null;
 // Tail of the most recent partial flush; discard() waits on it so a late flush can never resurrect a deleted row.
 let lastFlush: Promise<unknown> = Promise.resolve();
+const STORAGE_ERROR = 'history not saved';
 const clear = () => { if (timer) clearInterval(timer); timer = null; };
 // The rider is captured at begin(): picking someone else mid-ride must not re-label (or re-weigh) the ride in progress.
 type RideRider = Pick<Rider, 'id' | 'name' | 'weightKg' | 'ftpW' | 'cpW' | 'wprimeKj' | 'hrMax'>;
@@ -22,7 +23,7 @@ const toRecord = (e: RideEngine, rider: RideRider | undefined): SessionRecord =>
 };
 
 export const useRide = create<S>((set, get) => ({
-  engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null,
+  storageError: null, engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null,
   begin: (opts) => {
     if (get().state === 'recording' || get().state === 'paused') return;
     const cur = useRiders.getState().current();
@@ -30,7 +31,7 @@ export const useRide = create<S>((set, get) => ({
     const rider = rideRider;
     const st = useSettings.getState();
     const engine = new RideEngine({ rider: { weightKg: rider?.weightKg ?? 70, ftpW: rider?.ftpW ?? 250, cpW: rider?.cpW, wprimeKj: rider?.wprimeKj ?? 20, hrMax: rider?.hrMax ?? 180 }, smoothingN: st.smoothingN });
-    set({ engine, lapRows: [], view: null, state: 'idle' });
+    set({ engine, lapRows: [], view: null, state: 'idle', storageError: null });
     const run = () => {
       engine.start(); set({ countdownLeft: null, state: 'recording' });
       clear();
@@ -39,7 +40,7 @@ export const useRide = create<S>((set, get) => ({
         set({ view: engine.view, state: engine.state });
         // Partial flush: a crash or tab kill loses at most ~10 s. saveSession uses put, so repeats are idempotent.
         // Gate on the tick result: tick() returns null while paused, so the length stays frozen and would re-flush every second.
-        if (sample && engine.samples.length % 10 === 0) lastFlush = saveSession(toRecord(engine, rideRider), engine.laps.rows, engine.samples.slice(-10)).catch(() => {});
+        if (sample && engine.samples.length % 10 === 0) lastFlush = saveSession(toRecord(engine, rideRider), engine.laps.rows, engine.samples.slice(-10)).catch(() => { set({ storageError: STORAGE_ERROR }); });
       }, 1000);
     };
     if (st.countdownS > 0 && !opts?.skipCountdown) {
@@ -64,8 +65,8 @@ export const useRide = create<S>((set, get) => ({
     const s = toRecord(e, rideRider);
     await saveSession(s, e.laps.rows, e.samples);
     if (remote.enabled) void remote.pushSession(s);
-    set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null });
+    set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null, storageError: null });
     return s;
   },
-  discard: () => { const e = get().engine; if (e && e.startMs) { const id = e.startMs; void lastFlush.then(() => deleteSession(id)).catch(() => {}); } clear(); set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null }); },
+  discard: () => { const e = get().engine; if (e && e.startMs) { const id = e.startMs; void lastFlush.then(() => deleteSession(id)).catch(() => { set({ storageError: STORAGE_ERROR }); }); } clear(); set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null }); },
 }));

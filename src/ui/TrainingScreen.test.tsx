@@ -37,6 +37,24 @@ describe('TrainingScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /yes, stop/i }));
     fireEvent.click(screen.getByRole('button', { name: /discard/i }));
   });
+  it('leaving the screen during the countdown cancels the ride', () => {
+    useSettings.getState().set({ countdownS: 5 });
+    const { unmount } = render(<MemoryRouter><TrainingScreen /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: /^start$/i }));
+    expect(useRide.getState().countdownLeft).toBe(5);
+    unmount();
+    act(() => { vi.advanceTimersByTime(10000); });
+    expect(useRide.getState().state).toBe('idle');
+    expect(useRide.getState().engine).toBeNull();
+    expect(useRide.getState().countdownLeft).toBeNull();
+  });
+  it('shows a history-not-saved alert while the store reports a storage error', () => {
+    useRide.setState({ storageError: 'history not saved' });
+    render(<MemoryRouter><TrainingScreen /></MemoryRouter>);
+    expect(screen.getByRole('alert')).toHaveTextContent('History not saved — retry on Stop');
+    act(() => { useRide.setState({ storageError: null }); });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
   it('renders the AVG/MAX and lap sub-lines with a real middle dot (not U+FFFD)', () => {
     render(<MemoryRouter><TrainingScreen /></MemoryRouter>);
     // The sub-lines are display:none below 600 px but always in the DOM.

@@ -89,6 +89,47 @@ describe('ride store', () => {
   });
 });
 
+describe('sensor store reconnectAll', () => {
+  beforeEach(() => { vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); useSettings.setState({ devices: {} }); useSensors.setState({ states: { hr: 'unpaired', power: 'unpaired', csc: 'unpaired', trainer: 'unpaired' } }); });
+  const remember = (...slots: ('hr' | 'power' | 'csc' | 'trainer')[]) => { for (const slot of slots) useSettings.getState().setDevice(slot, { slot, id: slot, name: slot }); };
+  it('skips slots that are already connecting or connected', async () => {
+    remember('hr', 'power', 'csc');
+    useSensors.setState({ states: { hr: 'connecting', power: 'connected', csc: 'offline', trainer: 'unpaired' } });
+    const connect = vi.spyOn(useSensors.getState().adapter, 'connect').mockResolvedValue();
+    await useSensors.getState().reconnectAll();
+    expect(connect.mock.calls.map(([d]) => d.slot)).toEqual(['csc']);
+  });
+  it('connects slots in parallel (two 1 s connects take ~1 s, not 2 s)', async () => {
+    remember('hr', 'power');
+    let done = 0;
+    vi.spyOn(useSensors.getState().adapter, 'connect').mockImplementation(() => new Promise<void>((r) => setTimeout(() => { done++; r(); }, 1000)));
+    const all = useSensors.getState().reconnectAll();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(done).toBe(2);
+    await all;
+  });
+  it('can leave out slots that the screen is pairing through the chooser', async () => {
+    remember('hr', 'power');
+    useSensors.setState({ states: { hr: 'offline', power: 'offline', csc: 'unpaired', trainer: 'unpaired' } });
+    const connect = vi.spyOn(useSensors.getState().adapter, 'connect').mockResolvedValue();
+    await useSensors.getState().reconnectAll(['hr']);
+    expect(connect.mock.calls.map(([d]) => d.slot)).toEqual(['power']);
+  });
+});
+
+describe('sensor store pair failure', () => {
+  afterEach(() => { vi.restoreAllMocks(); useSettings.setState({ devices: {} }); });
+  it('a cancelled chooser leaves a remembered slot offline (not unpaired) and a fresh slot unpaired', async () => {
+    vi.spyOn(useSensors.getState().adapter, 'pair').mockRejectedValue(new Error('User cancelled'));
+    useSettings.getState().setDevice('hr', { slot: 'hr', id: 'h', name: 'Strap' });
+    await useSensors.getState().pair('hr');
+    expect(useSensors.getState().states.hr).toBe('offline');
+    await useSensors.getState().pair('power');
+    expect(useSensors.getState().states.power).toBe('unpaired');
+  });
+});
+
 describe('sensor store', () => {
   it('forget clears the slot kinds from the mirrored values', async () => {
     useSettings.getState().setDevice('hr', { slot: 'hr', id: 'h', name: 'Strap' });

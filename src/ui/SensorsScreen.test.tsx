@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import SensorsScreen from './SensorsScreen';
 import { useSensors } from '../app/sensor-store';
@@ -83,6 +83,37 @@ describe('SensorsScreen', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Menu: pair Heart rate' }));
     expect(pair).toHaveBeenCalledWith('hr');
     expect(screen.queryByText('Sensor Configuration')).not.toBeInTheDocument();
+  });
+  it('Reconnect opens the chooser (pair) for a remembered slot with no device object, inside the tap', async () => {
+    const dev = { slot: 'hr' as const, id: 'x', name: 'Polar H10' };
+    useSettings.getState().setDevice('hr', dev);
+    const reconnectAll = vi.fn(async () => {});
+    const real = useSensors.getState().reconnectAll;
+    useSensors.setState({ reconnectAll });
+    try {
+      render(<MemoryRouter><SensorsScreen /></MemoryRouter>);
+      // jsdom has no Web Bluetooth, so the adapter finds no device object and flags the slot.
+      await act(async () => { await useSensors.getState().adapter.connect(dev); });
+      expect(screen.getByText('Tap Reconnect to choose the device again')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Reconnect all' }));
+      expect(pair).toHaveBeenCalledWith('hr');
+      expect(reconnectAll).toHaveBeenCalledWith(['hr']);
+    } finally {
+      act(() => { useSensors.setState({ reconnectAll: real }); });
+    }
+  });
+  it('Reconnect just reconnects when nothing needs the chooser', () => {
+    const reconnectAll = vi.fn(async () => {});
+    const real = useSensors.getState().reconnectAll;
+    useSensors.setState({ reconnectAll });
+    try {
+      render(<MemoryRouter><SensorsScreen /></MemoryRouter>);
+      fireEvent.click(screen.getByRole('button', { name: 'Reconnect all' }));
+      expect(pair).not.toHaveBeenCalled();
+      expect(reconnectAll).toHaveBeenCalledWith();
+    } finally {
+      act(() => { useSensors.setState({ reconnectAll: real }); });
+    }
   });
   it('bottom bar reads Reconnect sensors with the Reconnect all label', () => {
     render(<MemoryRouter><SensorsScreen /></MemoryRouter>);

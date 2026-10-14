@@ -9,6 +9,9 @@ import { RevCounter, speedMs, cadenceRpm } from './derive';
 const SLOT_SERVICE: Record<Slot, number> = { hr: UUIDS.HR_SERVICE, power: UUIDS.CPS_SERVICE, csc: UUIDS.CSC_SERVICE, trainer: UUIDS.FTMS_SERVICE };
 const SLOT_CHAR: Record<Slot, number> = { hr: UUIDS.HR_MEASUREMENT, power: UUIDS.CPS_MEASUREMENT, csc: UUIDS.CSC_MEASUREMENT, trainer: UUIDS.FTMS_INDOOR_BIKE };
 
+/** State message for a remembered device that cannot be reopened without the user choosing it again. */
+export const CHOOSER_HINT = 'Tap Reconnect to choose the device again';
+
 export class BleAdapter implements SensorSource {
   id = 'ble';
   private readingCbs = new Set<(r: SensorReading) => void>();
@@ -16,6 +19,7 @@ export class BleAdapter implements SensorSource {
   private devices = new Map<Slot, BluetoothDevice>();
   private wheel = new Map<Slot, RevCounter>();
   private crank = new Map<Slot, RevCounter>();
+  private chooser = new Set<Slot>();
   private readonly bt: Bluetooth | undefined;
   constructor(private readonly o: { circumferenceMm: () => number; bluetooth?: Bluetooth }) { this.bt = o.bluetooth ?? (typeof navigator !== 'undefined' ? navigator.bluetooth : undefined); }
   static available() { return typeof navigator !== 'undefined' && !!navigator.bluetooth; }
@@ -25,14 +29,20 @@ export class BleAdapter implements SensorSource {
   private emit(r: SensorReading) { this.readingCbs.forEach((cb) => cb(r)); }
   private setState(slot: Slot, s: SensorState, msg?: string) { this.stateCbs.forEach((cb) => cb(slot, s, msg)); }
 
+  /** True when a remembered slot has no device object and needs the browser chooser (a user gesture) to reconnect. */
+  needsChooser(slot: Slot) { return this.chooser.has(slot); }
+
   /** Drop this slot's revolution counters: cumulative counts can restart after a reconnect. */
   resetCounters(slot: Slot) { this.wheel.delete(slot); this.crank.delete(slot); }
 
   async pair(slot: Slot): Promise<PairedDevice> {
     if (!this.bt) throw new Error('Web Bluetooth is not available in this browser. Use Chrome on Android.');
+    const wasChooser = this.chooser.delete(slot);
     const prev = this.devices.get(slot);
     if (prev) await this.disconnect({ slot, id: prev.id, name: prev.name ?? 'Unnamed' });
-    const dev = await this.bt.requestDevice({ filters: [{ services: [SLOT_SERVICE[slot]] }], optionalServices: ALL_SERVICES });
+    let dev: BluetoothDevice;
+    try { dev = await this.bt.requestDevice({ filters: [{ services: [SLOT_SERVICE[slot]] }], optionalServices: ALL_SERVICES }); }
+    catch (e) { if (wasChooser) this.chooser.add(slot); throw e; } // a cancelled chooser leaves the slot needing one
     const d: PairedDevice = { slot, id: dev.id, name: dev.name ?? 'Unnamed' };
     this.devices.set(slot, dev);
     await this.connectDevice(slot, dev);
@@ -42,13 +52,15 @@ export class BleAdapter implements SensorSource {
   async connect(d: PairedDevice): Promise<void> {
     let dev = this.devices.get(d.slot);
     if (!dev && this.bt?.getDevices) dev = (await this.bt.getDevices()).find((x) => x.id === d.id);
-    if (!dev) { this.setState(d.slot, 'offline', 'Tap Reconnect to choose the device again'); return; }
+    if (!dev) { this.chooser.add(d.slot); this.setState(d.slot, 'offline', CHOOSER_HINT); return; }
+    this.chooser.delete(d.slot);
     this.devices.set(d.slot, dev);
     await this.connectDevice(d.slot, dev);
   }
 
   async disconnect(d: PairedDevice): Promise<void> {
     const dev = this.devices.get(d.slot); this.devices.delete(d.slot);
+    this.chooser.delete(d.slot);
     this.resetCounters(d.slot);
     this.dropListener(d.slot);
     dev?.gatt?.disconnect(); this.setState(d.slot, 'unpaired');
