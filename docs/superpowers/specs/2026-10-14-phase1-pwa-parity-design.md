@@ -28,7 +28,8 @@ Deferred to later phases (do not build hooks for them beyond what is noted):
 
 ## 3. Stack
 
-- Vite + TypeScript. React 19 for screens, Zustand for app state, Tailwind v4 for styling.
+- Vite + TypeScript. React 19 for screens, Zustand for app state, Tailwind 3.4 for styling (Tailwind 4 emits oklch/@property CSS that Chrome 81 cannot render, so the fleet tablets would lose all styling).
+- Settings and remembered devices live in localStorage through Zustand `persist`; IndexedDB holds riders, sessions, laps and samples.
 - Chart.js for rolling charts.
 - `idb` for IndexedDB.
 - `@garmin/fitsdk` for FIT encoding (Garmin FIT SDK licence permits use in applications; record it in `THIRD_PARTY.md`).
@@ -164,7 +165,7 @@ Message set mirrors the vendor so downstream tools behave the same: FileId (type
 
 ## 12. Open items carried to later phases
 
-- **Phase 2 is a rider/studio portal modelled on SelfLoops, stripped to indoor cycling, in Granny Gear's look** (Laurent, 2026-10-14). Reference: `docs/reference/selfloops-portal-notes.md`. Rider side: dashboard (week / year-to-date / all-time stats, health card with weight/HRrest/HRmax/FTP, activity calendar), activities list with FIT download and Strava status, profile with Strava connect/revoke, my sensors. Studio side: rider list with CSV import and edit-in-place, per-rider Strava link state. Same Cloudflare Pages project, Functions + D1, OTP admin gate.
+- **Phase 2 is a rider/studio portal modelled on SelfLoops, stripped to indoor cycling, in Granny Gear's look** (Laurent, 2026-10-14). Reference: `docs/reference/selfloops-portal-notes.md`. Rider side: dashboard (week / year-to-date / all-time stats, health card with weight/HRrest/HRmax/FTP, activity calendar), activities list with FIT download and Strava status, profile with Strava connect/revoke, my sensors. Studio side: rider list with CSV import and edit-in-place, per-rider Strava link state. **Separate repo and Pages project** (working name `indoorgranny_26-portal`, same divergentbiz account), Functions + D1, OTP admin gate. The portal owns the D1 database and exposes the API (`/api/riders`, `/api/sessions`, `/api/strava/*`); this ride app only calls that API, so phase 1 keeps every network call behind one `src/data/remote.ts` module that is a no-op until phase 2.
 - D1 schema mirrors the `riders` store; CSV import maps the columns in CLEANROOM-SPEC §5. Phase 1 stores sessions locally; the portal needs sessions pushed to D1 on save, so phase 1 keeps `sessions.uploaded` and a `sessions.synced` flag reserved.
 - Strava: register the API application early; new apps are capped at one connected athlete until Strava raises the limit.
 - ANT: the JS ANT stack consumes raw ANT frames from either WebUSB or the tablet bridge; CycleOps payload decoding is written once there.
