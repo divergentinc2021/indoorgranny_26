@@ -80,9 +80,24 @@ describe('SensorsScreen', () => {
     expect(screen.queryByText('Sensor Configuration')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Sensor menu' }));
     expect(screen.getByText('Sensor Configuration')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Menu: pair Heart rate' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Menu: pair Heart rate' }));
     expect(pair).toHaveBeenCalledWith('hr');
     expect(screen.queryByText('Sensor Configuration')).not.toBeInTheDocument();
+  });
+  it('the menu is a plain list of buttons (no menu roles) and closes on Escape or an outside tap', () => {
+    render(<MemoryRouter><SensorsScreen /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'Sensor menu' }));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem')).not.toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByText('Sensor Configuration')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Sensor menu' }));
+    expect(screen.getByText('Sensor Configuration')).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByText('Reconnect sensors'));
+    expect(screen.queryByText('Sensor Configuration')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Sensor menu' }));
+    fireEvent.mouseDown(screen.getByText('Sensor Configuration'));            // inside the panel: stays open
+    expect(screen.getByText('Sensor Configuration')).toBeInTheDocument();
   });
   it('Reconnect opens the chooser (pair) for a remembered slot with no device object, inside the tap', async () => {
     const dev = { slot: 'hr' as const, id: 'x', name: 'Polar H10' };

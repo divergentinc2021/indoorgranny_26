@@ -14,15 +14,17 @@ export default function Home() {
   return (
     <>
       {showTerms && <TermsDialog onAccept={() => set({ licenseAccepted: true })} onDecline={() => setOpen(false)} />}
+      {/* Chrome 81 (the studio tablets) has no `inert`: while Declined, this transparent sheet takes every tap and reopens the terms. */}
+      {!accepted && !open && <div data-testid="terms-gate" className="fixed top-0 right-0 bottom-0 left-0 z-[5]" onClick={() => setOpen(true)} />}
       <div className="min-h-full flex flex-col bg-white">
         <header className="relative bg-gg-bg px-4 py-3 text-white">
           {!accepted && <button inert={showTerms} className="absolute left-0 top-0 bottom-0 flex items-center px-3 max-w-[30%] truncate text-sm text-gg-strip" onClick={() => setOpen(true)}>Review terms</button>}
           <h1 className="text-center text-[20px]">Granny Gear</h1>
           <span inert={!accepted}><Link to="/rider" className="absolute right-0 top-0 bottom-0 flex items-center px-3 max-w-[30%] truncate text-sm text-gg-strip">{rider ? rider.name : 'Choose rider'}</Link></span>
         </header>
-        <div inert={!accepted} className="flex-1 flex flex-col">
+        <div inert={!accepted} aria-hidden={!accepted ? true : undefined} className="flex-1 flex flex-col">
           <nav className="flex-1 flex flex-col p-[10px]">
-            {TILES.map(([label, to]) => <Link key={to} to={to} className="flex-1 flex items-center justify-center m-[10px] min-h-[56px] bg-gg-strip text-[25px] text-white text-center">{label}</Link>)}
+            {TILES.map(([label, to]) => <Link key={to} to={to} className="flex-1 flex items-center justify-center m-[10px] min-h-[56px] bg-gg-strip text-[22px] text-white text-center">{label}</Link>)}
           </nav>
           <footer className="bg-gg-bg px-4 py-3 text-center text-[20px] text-white">improve your performance</footer>
         </div>

@@ -25,6 +25,8 @@ export default {
           summary: '#9e9e9e', // preference summary text
           dlg: '#0a0a0a', // dark dialog body
         },
+        // %HR max value-strip tint by band (engine hrBand z1..z5); z1 is the resting cyan.
+        hr: { z1: '#00bbff', z2: '#0eef2c', z3: '#e6e600', z4: '#ffb872', z5: '#ff8787' },
         // Lap-row fills for zones 1..7: emerald, green, light green, yellow, dark yellow, orange, red (salmon).
         zone: { z1: '#7adac6', z2: '#0eef2c', z3: '#abebcb', z4: '#ffff00', z5: '#e6e600', z6: '#ffb872', z7: '#ff8787' },
       },

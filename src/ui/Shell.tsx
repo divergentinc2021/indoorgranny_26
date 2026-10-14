@@ -32,11 +32,11 @@ export default function Shell({ title, children, back = true, tone = 'white', fi
       )}
     </header>
   );
-  const dark = 'flex items-center h-[56px] px-4 bg-gg-bar';
+  const dark = 'flex items-center h-[56px] bg-gg-bar';
   return (
     <div className={`flex flex-col ${root} ${PAGE[tone]}`}>
       {bar === undefined
-        ? header(`${dark} tab:block tab:h-auto tab:py-3 ${strip}`)
+        ? header(`${dark} px-4 tab:block tab:h-auto tab:py-3 ${strip}`)
         : (
           <>
             {bar !== false && header(`${dark} px-2 tab:hidden`, bar)}

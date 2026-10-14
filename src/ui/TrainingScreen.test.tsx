@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import TrainingScreen from './TrainingScreen';
 import { useRide } from '../app/ride-store';
 import { useSettings } from '../app/settings-store';
+import * as sessionsModule from '../data/sessions';
+import { RideEngine } from '../engine/ride';
 describe('TrainingScreen', () => {
   // jsdom has no canvas: report "no 2D context" quietly so RollingChart skips Chart.js without stderr noise.
   beforeEach(() => { vi.useFakeTimers(); vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null); });
@@ -54,6 +56,35 @@ describe('TrainingScreen', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('History not saved — retry on Stop');
     act(() => { useRide.setState({ storageError: null }); });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+  it('a failed save keeps the dialog open with an alert and a Retry that can succeed', async () => {
+    useSettings.getState().set({ countdownS: 0 });
+    const spy = vi.spyOn(sessionsModule, 'saveSession').mockRejectedValue(new Error('disk full'));
+    render(<MemoryRouter><TrainingScreen /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: /^start$/i }));
+    act(() => { vi.advanceTimersByTime(2000); });
+    fireEvent.click(screen.getByRole('button', { name: /^stop$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /yes, stop/i }));
+    spy.mockClear();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^save$/i })); });
+    expect(screen.getByText(/save it\?/i)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/disk full/i);
+    expect(useRide.getState().state).toBe('stopped');
+    spy.mockResolvedValue(undefined);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^retry$/i })); });
+    expect(screen.queryByText(/save it\?/i)).not.toBeInTheDocument();
+    expect(useRide.getState().state).toBe('idle');
+  });
+  it('tints the %HR max strips by HR band (90 % -> z5 colour); the power strip stays cyan', () => {
+    const e = new RideEngine({ rider: { weightKg: 70, ftpW: 250, wprimeKj: 20, hrMax: 180 }, smoothingN: 1 });
+    e.start(); e.tick({ hr: 162, power: 0, cadence: 0, speedMs: 0 });
+    act(() => { useRide.setState({ view: e.view }); });
+    render(<MemoryRouter><TrainingScreen /></MemoryRouter>);
+    const strips = screen.getAllByText('90');
+    expect(strips).toHaveLength(2);                                   // phone bottom row + tablet row
+    for (const s of strips) expect(s).toHaveClass('bg-hr-z5');
+    expect(screen.getByText('Power').nextElementSibling).toHaveClass('bg-gg-strip');
+    act(() => { useRide.setState({ view: null }); });
   });
   it('renders the AVG/MAX and lap sub-lines with a real middle dot (not U+FFFD)', () => {
     render(<MemoryRouter><TrainingScreen /></MemoryRouter>);

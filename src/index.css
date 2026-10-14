@@ -1,4 +1,6 @@
 @tailwind base;
+/* Tailwind's button reset sits in a :where() rule that Chrome < 88 drops, leaving the UA grey. */
+button { background: transparent; }
 @tailwind components;
 @tailwind utilities;
 html, body, #root { height: 100%; }

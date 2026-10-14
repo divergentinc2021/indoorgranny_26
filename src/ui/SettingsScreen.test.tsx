@@ -5,6 +5,7 @@ import { useSettings } from '../app/settings-store';
 import { useRiders } from '../app/rider-store';
 import { newRider, type Rider } from '../data/riders';
 describe('SettingsScreen', () => {
+  beforeEach(() => { useSettings.getState().set({ unitSystem: 'metric' }); });
   it('exposes the vendor keys and writes them to the store', () => {
     render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
     fireEvent.change(screen.getByLabelText(/unit system/i), { target: { value: 'imperial' } });
@@ -75,5 +76,46 @@ describe('SettingsScreen', () => {
     fireEvent.change(screen.getByLabelText('Weight (kg)'), { target: { value: '82.5' } });
     fireEvent.click(screen.getByRole('button', { name: 'OK' }));
     await waitFor(() => expect(save).toHaveBeenCalledWith({ ...rider, weightKg: 82.5 }));
+  });
+});
+
+describe('SettingsScreen weight units and save errors', () => {
+  beforeEach(() => { useSettings.getState().set({ unitSystem: 'metric' }); });
+  afterEach(() => { useSettings.getState().set({ unitSystem: 'metric' }); });
+  it('imperial: shows pounds and converts a typed value back to kg (storage stays kg)', async () => {
+    const rider = newRider({ name: 'Ann', email: 'a@x.za', weightKg: 85, ftpW: 227, wprimeKj: 20 });
+    const save = vi.fn(async () => {});
+    useRiders.setState({ riders: [rider], currentId: rider.id, save });
+    useSettings.getState().set({ unitSystem: 'imperial' });
+    render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
+    expect(screen.getByText('weight equal to 187.4 lb')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Weight/ }));
+    expect(screen.getByLabelText('Weight (lb)')).toHaveValue(187.4);
+    fireEvent.change(screen.getByLabelText('Weight (lb)'), { target: { value: '200' } });
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+    expect((save.mock.calls[0] as unknown as [Rider])[0].weightKg).toBeCloseTo(90.72, 2);
+  });
+  it('metric: kg shown and stored as typed', async () => {
+    const rider = newRider({ name: 'Ann', email: 'a@x.za', weightKg: 85 });
+    const save = vi.fn(async () => {});
+    useRiders.setState({ riders: [rider], currentId: rider.id, save });
+    render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
+    expect(screen.getByText('weight equal to 85.0 kg')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Weight/ }));
+    fireEvent.change(screen.getByLabelText('Weight (kg)'), { target: { value: '90' } });
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+    expect((save.mock.calls[0] as unknown as [Rider])[0].weightKg).toBe(90);
+  });
+  it('a rejected save shows an alert and keeps the editor open', async () => {
+    const rider = newRider({ name: 'Ann', email: 'a@x.za', weightKg: 85 });
+    useRiders.setState({ riders: [rider], currentId: rider.id, save: async () => { throw new Error('disk full'); } });
+    render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: /^Weight/ }));
+    fireEvent.change(screen.getByLabelText('Weight (kg)'), { target: { value: '90' } });
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('disk full');
+    expect(screen.getByLabelText('Weight (kg)')).toBeInTheDocument();
   });
 });

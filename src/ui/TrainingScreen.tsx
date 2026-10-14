@@ -11,7 +11,7 @@ import { useRide } from '../app/ride-store';
 import { useRiders } from '../app/rider-store';
 import { useSettings } from '../app/settings-store';
 import { useSensors } from '../app/sensor-store';
-import { powerZones } from '../engine/zones';
+import { powerZones, hrBand } from '../engine/zones';
 import { fmtClock, fmtDuration, fmtDistance, fmtSpeed } from '../app/format';
 import { useWorkouts } from '../app/workout-store';
 
@@ -19,6 +19,8 @@ import { useWorkouts } from '../app/workout-store';
 const BTN = 'py-3 text-[28px] font-bold uppercase tab:text-[38px] tab:font-normal tab:normal-case';
 const GREY = `${BTN} bg-gg-btn text-black`;
 const CYAN = `${GREY} tab:bg-gg-strip tab:text-white`;
+// %HR max value strip by HR band (vendor colours, tokens `hr.z1..z5`). Literal class names so Tailwind keeps them; z1 is the resting cyan.
+const HR_STRIP = { z1: 'bg-hr-z1 text-white', z2: 'bg-hr-z2 text-black', z3: 'bg-hr-z3 text-black', z4: 'bg-hr-z4 text-black', z5: 'bg-hr-z5 text-black' };
 const EMPTY_HIST = { hr: [] as number[], power: [] as number[], cad: [] as number[], wbal: [] as number[] };
 
 export default function TrainingScreen() {
@@ -29,6 +31,7 @@ export default function TrainingScreen() {
   const reconnectAll = useSensors((s) => s.reconnectAll);
   const [confirmStop, setConfirmStop] = useState(false);
   const [askSave, setAskSave] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [hist, setHist] = useState(EMPTY_HIST);
   const zones = useMemo(() => powerZones(rider?.ftpW ?? 250, rider?.powerZones), [rider]);
   const workout = useWorkouts((s) => s.selected());
@@ -52,12 +55,18 @@ export default function TrainingScreen() {
   const unit = st.unitSystem;
   const wide = typeof window !== 'undefined' && window.innerWidth >= 600;
   const cur = ride.engine?.laps.current;
+  const hrStrip = HR_STRIP[hrBand(v?.pctHrMax ?? 0)];
+  // The dialog stays open on failure so the ride is never lost; Retry runs the same save again.
+  const doSave = async () => {
+    try { await ride.save(); setSaveError(null); setAskSave(false); setHist(EMPTY_HIST); nav('/logs'); }
+    catch (e) { setSaveError(e instanceof Error && e.message ? e.message : 'Could not save'); }
+  };
 
   return (
     <Shell title="Training" back={!riding} tone="navy" fill bar={<PhoneBar name={rider?.name ?? 'Guest'} signOut={!riding} />}>
       {ride.countdownLeft !== null && <CountdownModal left={ride.countdownLeft} onSkip={() => { ride.discard(); ride.begin({ skipCountdown: true }); }} />}
       {confirmStop && <Dialog text="STOP this session?" yes="Yes, stop" onYes={() => { setConfirmStop(false); ride.stop(); setAskSave(true); }} onNo={() => setConfirmStop(false)} />}
-      {askSave && <Dialog text="Do you want to save it?" yes="Save" no="Discard" onYes={async () => { setAskSave(false); await ride.save(); setHist(EMPTY_HIST); nav('/logs'); }} onNo={() => { setAskSave(false); ride.discard(); setHist(EMPTY_HIST); }} />}
+      {askSave && <Dialog text="Do you want to save it?" yes={saveError ? 'Retry' : 'Save'} no="Discard" error={saveError} onYes={() => void doSave()} onNo={() => { setAskSave(false); setSaveError(null); ride.discard(); setHist(EMPTY_HIST); }} />}
       {ride.storageError && <div role="alert" className="bg-white text-red-700 font-bold text-[16px] px-2 py-1">History not saved — retry on Stop</div>}
       <div className="hidden tab:block text-[14px] text-white px-1 mb-1">Rider: {rider?.name ?? 'Guest'}</div>
       <Tile size="bare" label="Elapsed" value={fmtClock(v?.elapsedS ?? 0)} sub={`lap ${fmtDuration(v?.lapS ?? 0)}${v?.prevLapS != null ? ` · prev ${fmtDuration(v.prevLapS)}` : ''}`} />
@@ -69,7 +78,7 @@ export default function TrainingScreen() {
       <div className="hidden tab:grid grid-cols-4">
         <Tile size="small" label="Distance" value={fmtDistance(v?.distanceM ?? 0, unit)} />
         <Tile size="small" label="HR max" value={Math.round(v?.maxHr ?? 0)} />
-        <Tile size="small" label="%HR max" value={Math.round(v?.pctHrMax ?? 0)} sub={`HRmax ${rider?.hrMax ?? 180}`} />
+        <Tile size="small" label="%HR max" strip={hrStrip} value={Math.round(v?.pctHrMax ?? 0)} sub={`HRmax ${rider?.hrMax ?? 180}`} />
         <Tile size="small" label="KJ" value={(v?.kJ ?? 0).toFixed(0)} sub={`${Math.round(v?.calories ?? 0)} kcal`} />
       </div>
       <div className="hidden tab:grid grid-cols-3">
@@ -96,7 +105,7 @@ export default function TrainingScreen() {
       <div className="grid grid-cols-4 flex-shrink-0 tab:hidden">
         <Tile size="compact" label={`Distance\n(${unit === 'metric' ? 'km' : 'mi'})`} value={fmtDistance(v?.distanceM ?? 0, unit).split(' ')[0]} />
         <Tile size="compact" label={'Wbal\n(%exp)'} value={(v?.wbalPct ?? 0).toFixed(0)} />
-        <Tile size="compact" label={'%HR\nmax'} value={Math.round(v?.pctHrMax ?? 0)} />
+        <Tile size="compact" label={'%HR\nmax'} strip={hrStrip} value={Math.round(v?.pctHrMax ?? 0)} />
         <Tile size="compact" label="KJ" value={(v?.kJ ?? 0).toFixed(0)} />
       </div>
     </Shell>
@@ -115,11 +124,12 @@ function PhoneBar({ name, signOut }: { name: string; signOut: boolean }) {
   );
 }
 
-function Dialog({ text, yes, no = 'No', onYes, onNo }: { text: string; yes: string; no?: string; onYes: () => void; onNo: () => void }) {
+function Dialog({ text, yes, no = 'No', error, onYes, onNo }: { text: string; yes: string; no?: string; error?: string | null; onYes: () => void; onNo: () => void }) {
   return (
     <div role="dialog" aria-modal="true" className="fixed top-0 right-0 bottom-0 left-0 bg-black/80 flex items-center justify-center p-6 z-10">
       <div className="bg-white text-gg-bg border-2 border-gg-bg rounded-[15px] p-5 w-full max-w-sm space-y-4">
         <p className="text-lg">{text}</p>
+        {error && <p role="alert" className="text-red-700 font-bold text-sm">Could not save: {error}</p>}
         <div className="flex"><button className="flex-1 mr-2 bg-gg-strip text-white border-2 border-gg-bg rounded-[15px] py-2" onClick={onYes}>{yes}</button><button className="flex-1 bg-white text-gg-bg border-2 border-gg-bg rounded-[15px] py-2" onClick={onNo}>{no}</button></div>
       </div>
     </div>

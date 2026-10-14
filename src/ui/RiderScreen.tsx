@@ -21,7 +21,7 @@ export default function RiderScreen() {
       {/* Vendor login look: logo slot (also the way home) + welcome line, then the content on solid cyan. */}
       <div className="flex items-center p-[10px] tab:hidden">
         <Link to="/" aria-label="Home" className="flex-shrink-0"><img src="/icons/icon-192.png" alt="" width={48} height={48} className="w-[48px] h-[48px]" /></Link>
-        <h1 className="ml-2 text-[26px] leading-tight text-white">WELCOME TO GRANNY GEAR</h1>
+        <h1 className="ml-2 text-[20px] leading-tight text-white">WELCOME TO GRANNY GEAR</h1>
       </div>
       <div className="p-[10px]">
       {edit ? (

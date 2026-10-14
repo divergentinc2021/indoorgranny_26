@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 // @ts-expect-error -- tailwind.config.js is plain JS with no type declarations
 import config from '../../tailwind.config.js';
 
 // Vendor palette (docs/reference/vendor-ui-spec.md). A change here is a visual-parity regression.
-const colors = config.theme.extend.colors as { gg: Record<string, string>; zone: Record<string, string> };
+const colors = config.theme.extend.colors as { gg: Record<string, string>; zone: Record<string, string>; hr: Record<string, string> };
 
 describe('vendor palette tokens', () => {
   it('exposes the vendor UI colours', () => {
@@ -27,6 +29,18 @@ describe('vendor palette tokens', () => {
     expect([1, 2, 3, 4, 5, 6, 7].map((n) => colors.zone[`z${n}`])).toEqual(
       ['#7adac6', '#0eef2c', '#abebcb', '#ffff00', '#e6e600', '#ffb872', '#ff8787'],
     );
+  });
+
+  it('maps the %HR max bands z1..z5 to the vendor strip colours', () => {
+    expect([1, 2, 3, 4, 5].map((n) => colors.hr[`z${n}`])).toEqual(['#00bbff', '#0eef2c', '#e6e600', '#ffb872', '#ff8787']);
+    expect(colors.hr.z1).toBe(colors.gg.strip);
+  });
+
+  it('resets the button background after the Tailwind base (Chrome < 88 drops its :where() reset)', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf-8');
+    expect(css.indexOf('@tailwind base')).toBeGreaterThanOrEqual(0);
+    expect(css).toMatch(/button\s*\{\s*background:\s*transparent;?\s*\}/);
+    expect(css.search(/button\s*\{/)).toBeGreaterThan(css.indexOf('@tailwind base'));
   });
 
   it('uses the system sans stack, not web fonts', () => {

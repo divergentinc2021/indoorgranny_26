@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Shell from './Shell';
 import { useSensors } from '../app/sensor-store';
 import { useSettings } from '../app/settings-store';
@@ -18,6 +18,17 @@ export default function SensorsScreen() {
   // pair() on an occupied slot disconnects the old device before the picker opens, so ask first.
   const [confirming, setConfirming] = useState<Slot | null>(null);
   const [menu, setMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  // Escape or a tap outside the panel closes the menu.
+  useEffect(() => {
+    if (!menu) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(false); };
+    const onOutside = (e: Event) => { if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenu(false); };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onOutside);
+    document.addEventListener('touchstart', onOutside);
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onOutside); document.removeEventListener('touchstart', onOutside); };
+  }, [menu]);
   const startPair = (slot: Slot) => (devices[slot] ? setConfirming(slot) : void pair(slot));
   const v = { ...values, speedMs: values.speed };
   // A remembered device with no live object can only be reopened through the browser chooser, which needs this tap as its user gesture.
@@ -28,12 +39,12 @@ export default function SensorsScreen() {
   };
   return (
     <Shell title="Sensors" bare action={(
-      <div className="relative">
-        <button type="button" className="h-[56px] w-[48px] text-[28px] font-bold leading-none text-white" aria-label="Sensor menu" aria-haspopup="true" aria-expanded={menu} onClick={() => setMenu(!menu)}>{'⋮'}</button>
+      <div className="relative" ref={menuRef}>
+        <button type="button" className="h-[56px] w-[48px] text-[28px] font-bold leading-none text-white" aria-label="Sensor menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>{'⋮'}</button>
         {menu && (
-          <div role="menu" className="absolute right-0 top-[56px] z-20 w-[300px] max-w-[88vw] bg-[#fafafa] text-[#212121] shadow-lg">
+          <div className="absolute right-0 top-[56px] z-20 w-[300px] max-w-[88vw] bg-[#fafafa] text-[#212121] shadow-lg">
             <div className="px-[20px] py-[14px] text-[26px] font-bold text-[#595c6b]">Sensor Configuration</div>
-            {SLOTS.map(({ slot, label }) => <button key={slot} type="button" role="menuitem" aria-label={`Menu: pair ${label}`} className="block w-full text-left px-[20px] py-[14px] text-[26px] font-bold leading-tight" onClick={() => { setMenu(false); startPair(slot); }}>Pair {label}</button>)}
+            {SLOTS.map(({ slot, label }) => <button key={slot} type="button" aria-label={`Menu: pair ${label}`} className="block w-full text-left px-[20px] py-[14px] text-[26px] font-bold leading-tight" onClick={() => { setMenu(false); startPair(slot); }}>Pair {label}</button>)}
           </div>
         )}
       </div>
