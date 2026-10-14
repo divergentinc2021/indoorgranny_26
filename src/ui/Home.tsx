@@ -10,12 +10,12 @@ export default function Home() {
   return (
     <>
       {!accepted && <TermsDialog onAccept={() => set({ licenseAccepted: true })} />}
-      <div inert={!accepted} className="min-h-full p-4 flex flex-col gap-4">
-        <header className="flex items-baseline justify-between"><h1 className="text-2xl">Granny Gear</h1><Link to="/rider" className="text-gg-accent text-sm">{rider ? rider.name : 'Choose rider'}</Link></header>
-        <nav className="grid grid-cols-1 gap-3">
-          {TILES.map(([label, to]) => <Link key={to} to={to} className="block rounded bg-gg-panel border border-gg-line px-4 py-5 text-lg font-heading font-semibold tracking-wide">{label}</Link>)}
+      <div inert={!accepted} className="min-h-full flex flex-col bg-white">
+        <header className="relative bg-gg-bg px-4 py-3 text-white"><h1 className="text-center text-[20px]">Granny Gear</h1><Link to="/rider" className="absolute right-0 top-0 bottom-0 flex items-center px-3 max-w-[35%] truncate text-sm text-gg-strip">{rider ? rider.name : 'Choose rider'}</Link></header>
+        <nav className="flex-1 flex flex-col p-[10px]">
+          {TILES.map(([label, to]) => <Link key={to} to={to} className="flex-1 flex items-center justify-center m-[10px] min-h-[56px] bg-gg-strip text-[25px] text-white text-center">{label}</Link>)}
         </nav>
-        <footer className="mt-auto text-xs text-gg-muted">indoorgranny_26 · phase 1</footer>
+        <footer className="bg-gg-bg px-4 py-3 text-center text-[14px] text-white">indoorgranny_26 · phase 1</footer>
       </div>
     </>
   );

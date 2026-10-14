@@ -27,11 +27,11 @@ export default function SessionDetail() {
     })();
     return () => { cancelled = true; };
   }, [id]);
-  if (status === 'loading') return <Shell title="Session">Loading…</Shell>;
-  if (status === 'missing' || !s) return <Shell title="Session"><p className="text-gg-muted">Session not found</p></Shell>;
+  if (status === 'loading') return <Shell title="Session" tone="navy">Loading…</Shell>;
+  if (status === 'missing' || !s) return <Shell title="Session" tone="navy"><p>Session not found</p></Shell>;
   return (
-    <Shell title={fmtDate(s.startMs)}>
-      <p className="text-sm text-gg-muted mb-2">{s.riderName} · {fmtDuration(s.durationS)} · avg {Math.round(s.avgPower)} W · avg {Math.round(s.avgHr)} bpm · {Math.round(s.calories)} kcal</p>
+    <Shell title={fmtDate(s.startMs)} tone="navy">
+      <p className="text-[14px] text-white mb-2">{s.riderName} · {fmtDuration(s.durationS)} · avg {Math.round(s.avgPower)} W · avg {Math.round(s.avgHr)} bpm · {Math.round(s.calories)} kcal</p>
       <RollingChart window={samples.length || 1} series={[{ label: 'HR', data: samples.map((x) => x.hr), min: 45, max: 220, color: '#e74c3c' }, { label: 'Power', data: samples.map((x) => x.power), min: 0, max: 550, color: '#f28c1b' }]} />
       <div className="mt-3"><LapTable rows={laps} now={{ number: laps.length + 1, durationS: 0, distanceM: 0, avgPower: 0, avgHr: 0, avgCad: 0, avgSpeedMs: 0 }} zones={powerZones(250)} unit={unit} showNow={false} /></div>
     </Shell>

@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale } from 'chart.js';
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale);
+// Charts sit on the navy page: white labels, faint white grid.
+Chart.defaults.color = '#ffffff';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.2)';
 export interface Series { label: string; data: number[]; min: number; max: number; color: string }
 export default function RollingChart({ series, window = 800, height = 120 }: { series: Series[]; window?: number; height?: number }) {
   const ref = useRef<HTMLCanvasElement>(null); const chart = useRef<Chart | null>(null);

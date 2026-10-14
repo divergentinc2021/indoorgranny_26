@@ -2,5 +2,4 @@
 @tailwind components;
 @tailwind utilities;
 html, body, #root { height: 100%; }
-body { @apply bg-gg-bg text-gg-text font-body; }
-h1, h2, h3 { @apply font-heading; }
+body { @apply bg-gg-bg text-white font-sans; }

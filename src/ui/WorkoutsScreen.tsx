@@ -7,20 +7,20 @@ export default function WorkoutsScreen() {
   const file = useRef<HTMLInputElement>(null); const [msg, setMsg] = useState('');
   useEffect(() => { void loadBundled(); }, [loadBundled]);
   return (
-    <Shell title="Structured workouts">
-      <ul className="divide-y divide-gg-line">
+    <Shell title="Structured workouts" tone="black">
+      <ul>
         {workouts.map((w) => (
-          <li key={w.id} className="py-2 flex items-center justify-between">
-            <button className={`text-left ${w.id === selectedId ? 'text-gg-accent' : ''}`} onClick={() => { select(w.id); setMsg(`${w.title} selected`); }}>
-              <div>{w.title}</div><div className="text-xs text-gg-muted">{w.wdate} · {fmtDuration(w.totalduration)} · {w.type}</div>
+          <li key={w.id} className={`p-[5px] flex items-center border-b border-white ${w.id === selectedId ? 'bg-gg-strip' : ''}`}>
+            <button className="flex-1 text-left" onClick={() => { select(w.id); setMsg(`${w.title} selected`); }}>
+              <div className={`text-[20px] font-bold ${w.id === selectedId ? 'text-white' : 'text-gg-strip'}`}>{w.title}</div><div className="grid grid-cols-3 text-[20px] text-white"><span>{fmtDuration(w.totalduration)}</span><span>{w.type}</span><span>{w.wdate}</span></div>
             </button>
-            <button className="text-xs text-red-400" onClick={() => remove(w.id)}>Remove</button>
+            <button className="ml-2 text-[14px] text-white underline" onClick={() => remove(w.id)}>Remove</button>
           </li>
         ))}
       </ul>
       <input ref={file} type="file" accept="application/json" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; try { setMsg(add(JSON.parse(await f.text())) ? 'Workout imported' : 'Not a valid workout file'); } catch { setMsg('Not a valid workout file'); } e.target.value = ''; }} />
-      <button className="mt-4 bg-gg-accent text-black font-semibold rounded px-4 py-2" onClick={() => file.current?.click()}>Import JSON</button>
-      {msg && <p className="mt-2 text-sm text-gg-muted" role="status">{msg}</p>}
+      <button className="mt-4 bg-gg-strip text-white text-[20px] px-4 py-2" onClick={() => file.current?.click()}>Import JSON</button>
+      {msg && <p className="mt-2 text-[14px] text-white" role="status">{msg}</p>}
     </Shell>
   );
 }
