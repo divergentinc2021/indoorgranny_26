@@ -19,4 +19,13 @@ describe('LapTracker', () => {
     const r = t.close(0);
     expect(r.avgPower).toBe(0); expect(r.durationS).toBe(0); expect(r.difHrPct).toBeNull();
   });
+  it('a lap closed with no HR samples after a real lap has null %dif HR, not −100', () => {
+    const t = new LapTracker();
+    t.sample(s(200, 130, 90, 5, 5, 1, 1));
+    const real = t.close(1);
+    expect(real.avgHr).toBe(130);
+    const empty = t.close(2);                    // no samples since the last close
+    expect(empty.avgHr).toBe(0);
+    expect(empty.difHrPct).toBeNull();
+  });
 });

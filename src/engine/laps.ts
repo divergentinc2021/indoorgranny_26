@@ -24,7 +24,7 @@ export class LapTracker {
       number: this.n, startOffsetS: this.start, durationS: elapsedS - this.start,
       distanceM: this.lastDist - this.startDist, calories: this.lastCal - this.startCal,
       avgPower: this.power.avg, avgCad: this.cad.avg, avgSpeedMs: this.speed.avg, avgHr,
-      difHrPct: prev && prev.avgHr > 0 ? ((avgHr - prev.avgHr) / prev.avgHr) * 100 : null,
+      difHrPct: prev && prev.avgHr > 0 && this.hr.n > 0 ? ((avgHr - prev.avgHr) / prev.avgHr) * 100 : null,
     };
     this.rows.push(row);
     this.n++; this.start = elapsedS; this.startDist = this.lastDist; this.startCal = this.lastCal; this.lastElapsed = elapsedS;
