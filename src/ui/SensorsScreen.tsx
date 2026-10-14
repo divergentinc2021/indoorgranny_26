@@ -24,18 +24,20 @@ export default function SensorsScreen() {
       <ul className="space-y-3">
         {SLOTS.map(({ slot, label, value }) => {
           const d = devices[slot];
+          // Values are keyed by kind and arbitrated across slots, so only show one for a slot that is paired and connected.
+          const live = !!d && states[slot] === 'connected';
           const asking = confirming === slot && !!d;
           return (
             <li key={slot} className="rounded bg-gg-panel border border-gg-line p-3">
               <div className="flex items-center justify-between"><span className="font-heading font-semibold">{label}</span><span className={`text-xs ${states[slot] === 'connected' ? 'text-green-400' : 'text-gg-muted'}`}>{states[slot]}</span></div>
               <div className="flex items-center justify-between mt-1">
                 <span className="text-sm">{d ? d.name : <span className="text-gg-muted">not paired</span>}</span>
-                <span className="font-mono text-lg tabular-nums">{value(v)}</span>
+                <span className="font-mono text-lg tabular-nums">{live ? value(v) : value({})}</span>
               </div>
               {messages[slot] && <p className="text-xs text-yellow-400 mt-1">{messages[slot]}</p>}
               {asking ? (
                 <div className="mt-2 flex items-center gap-2 text-sm" role="group" aria-label={`Confirm pair again ${label}`}>
-                  <span>This forgets {d.name} first. Continue?</span>
+                  <span>This disconnects {d.name} first. Continue?</span>
                   <button className="bg-gg-accent text-black rounded px-3 py-1 font-semibold" onClick={() => { setConfirming(null); void pair(slot); }}>Yes</button>
                   <button className="border border-gg-line rounded px-3 py-1" onClick={() => setConfirming(null)}>Cancel</button>
                 </div>
