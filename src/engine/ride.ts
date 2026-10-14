@@ -1,4 +1,4 @@
-import { Stat, DistanceIntegrator, caloriesMet, kJ, pctOf } from './metrics';
+import { Stat, DistanceIntegrator, Cumulative, caloriesMet, kJ, pctOf } from './metrics';
 import { LapTracker, LapRow } from './laps';
 import { WBal } from './wbal';
 import { Ema } from './smoothing';
@@ -31,6 +31,9 @@ export class RideEngine {
   private emaP: Ema; private emaC: Ema;
   private last: LiveInput = { hr: 0, power: 0, cadence: 0, speedMs: 0 };
   private distanceM = 0; private calories = 0; private lastTickMs = 0;
+  // Trainer totals are measured as growth since the first value; once a trainer has supplied one the integrator/MET estimate is retired for the ride.
+  private trainerDist = new Cumulative(); private trainerKcal = new Cumulative();
+  private distCarry = 0; private kcalCarry = 0;
 
   constructor(private readonly o: RideOpts) {
     this.now = o.now ?? (() => Date.now());
@@ -40,7 +43,16 @@ export class RideEngine {
   start() { if (this.state !== 'idle') return; this.state = 'recording'; this.startMs = this.now(); this.lastTickMs = this.startMs; }
   pause() { if (this.state !== 'recording') return; this.state = 'paused'; this.pauseStartedAt = this.now(); }
   resume() { if (this.state !== 'paused') return; this.pausedMs += this.now() - this.pauseStartedAt; this.state = 'recording'; this.lastTickMs = this.now(); }
-  stop() { if (this.state === 'paused') this.resume(); if (this.state === 'recording') { this.stopMs = this.now(); this.state = 'stopped'; } }
+  stop() {
+    if (this.state === 'paused') this.resume();
+    if (this.state !== 'recording') return;
+    this.stopMs = this.now(); this.state = 'stopped';
+    // Close the open lap so the final stretch is not lost from the table and the FIT file (spec §5: final row uses kJ / 4.184).
+    if (this.laps.current.samples > 0) {
+      const row = this.laps.close(this.elapsedS());
+      row.calories = kJ(row.avgPower, row.durationS) / 4.184;
+    }
+  }
   lap(): LapRow | null { return this.state === 'recording' ? this.laps.close(this.elapsedS()) : null; }
 
   private elapsedS(): number {
@@ -59,10 +71,16 @@ export class RideEngine {
     this.emaP.push(input.power); this.emaC.push(input.cadence);
     this.wbal.tick(input.power);
     const elapsedS = this.elapsedS();
-    this.distanceM = input.trainerDistanceM ?? this.dist.push(input.speedMs, dtS);
-    this.calories = input.trainerKcal ?? caloriesMet(this.o.rider.weightKg, (elapsedS - 1) / 3600);
+    const integrated = this.dist.push(input.speedMs, dtS);
+    if (!this.trainerDist.seen && input.trainerDistanceM !== undefined) this.distCarry = this.distanceM;
+    if (!this.trainerKcal.seen && input.trainerKcal !== undefined) this.kcalCarry = this.calories;
+    this.trainerDist.push(input.trainerDistanceM); this.trainerKcal.push(input.trainerKcal);
+    this.distanceM = this.trainerDist.seen ? this.distCarry + this.trainerDist.total : integrated;
+    this.calories = this.trainerKcal.seen ? this.kcalCarry + this.trainerKcal.total : caloriesMet(this.o.rider.weightKg, (elapsedS - 1) / 3600);
     this.laps.sample({ power: input.power, hr: input.hr, cadence: input.cadence, speedMs: input.speedMs, distanceM: this.distanceM, calories: this.calories, elapsedS });
-    const s: Sample = { t: elapsedS, hr: input.hr, cadence: input.cadence, power: input.power, lap: this.laps.current.number, distanceM: this.distanceM, speedMs: input.speedMs };
+    const prevT = this.samples.length ? this.samples[this.samples.length - 1].t : 0;
+    const t = Math.max(prevT + 1, elapsedS); // a sub-second pause can repeat the floored second; sample keys must be unique
+    const s: Sample = { t, hr: input.hr, cadence: input.cadence, power: input.power, lap: this.laps.current.number, distanceM: this.distanceM, speedMs: input.speedMs };
     this.samples.push(s);
     return s;
   }

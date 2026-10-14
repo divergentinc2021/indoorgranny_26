@@ -59,6 +59,10 @@ describe('parseIndoorBikeData 0x2AD2', () => {
     const r = parseIndoorBikeData(dv(0x01, 0x09, 0x2c, 0x01, 0x90, 0x01, 0x05, 0x3c, 0x00));
     expect(r).toEqual({ kcalTotal: 300, elapsedS: 60 });
   });
+  it('treats kcal 0xFFFF (data not available) as absent', () => {
+    const r = parseIndoorBikeData(dv(0x01, 0x09, 0xff, 0xff, 0x90, 0x01, 0x05, 0x3c, 0x00));
+    expect(r).toEqual({ elapsedS: 60 });
+  });
   it('returns null on truncation', () => {
     expect(parseIndoorBikeData(dv(0x54, 0x02, 0x10))).toBeNull();
   });

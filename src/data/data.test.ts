@@ -4,14 +4,18 @@ import { saveSession, listSessions, getLaps, getSamples, deleteSession, deleteAl
 import type { SessionRecord } from './db';
 
 const sess = (id: number, n = 2): SessionRecord => ({ id, riderId: 'r1', riderName: 'Ann', sport: 'indoor_cycling', startMs: id, durationS: n, distanceM: 10, calories: 1, nSamples: n, avgPower: 100, maxPower: 120, avgHr: 130, maxHr: 140, avgCad: 85, uploaded: null, synced: false });
-const lap = { number: 1, startOffsetS: 0, durationS: 2, distanceM: 10, calories: 1, avgPower: 100, avgCad: 85, avgSpeedMs: 5, avgHr: 130, difHrPct: null };
+const lap = { number: 1, startOffsetS: 0, durationS: 2, distanceM: 10, calories: 1, avgPower: 100, avgCad: 85, avgSpeedMs: 5, avgHr: 130, maxPower: 120, maxHr: 140, difHrPct: null };
 const smp = (t: number) => ({ t, hr: 130, cadence: 85, power: 100, lap: 1, distanceM: t * 5, speedMs: 5 });
 
 describe('riders', () => {
-  it('newRider fills vendor defaults and cp = ftp', () => {
+  it('newRider fills vendor defaults and leaves cpW undefined (the engine falls back to FTP)', () => {
     const r = newRider({ name: 'Ann', email: 'a@x', ftpW: 300 });
-    expect(r).toMatchObject({ weightKg: 70, ftpW: 300, cpW: 300, wprimeKj: 20, hrMax: 180 });
+    expect(r).toMatchObject({ weightKg: 70, ftpW: 300, wprimeKj: 20, hrMax: 180 });
+    expect(r.cpW).toBeUndefined();
     expect(r.id).toBeTruthy();
+  });
+  it('newRider keeps an explicit cpW', () => {
+    expect(newRider({ name: 'Ann', email: 'a@x', ftpW: 300, cpW: 280 }).cpW).toBe(280);
   });
   it('put/list/delete', async () => {
     const r = newRider({ name: 'Ann', email: 'a@x' });

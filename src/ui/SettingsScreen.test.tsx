@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import SettingsScreen from './SettingsScreen';
 import { useSettings } from '../app/settings-store';
 import { useRiders } from '../app/rider-store';
-import { newRider } from '../data/riders';
+import { newRider, type Rider } from '../data/riders';
 describe('SettingsScreen', () => {
   it('exposes the vendor keys and writes them to the store', () => {
     render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
@@ -38,6 +38,30 @@ describe('SettingsScreen', () => {
     expect(screen.getAllByText('choose a rider first')).toHaveLength(3);
     expect(screen.getByRole('button', { name: /^Weight/ })).toBeDisabled();
     expect(screen.getByRole('checkbox', { name: /automatic sync/i })).toBeDisabled();
+  });
+  it('editing FTP leaves a blank CP blank, so the engine follows the new FTP', async () => {
+    const rider = newRider({ name: 'Ann', email: 'a@x.za', weightKg: 85, ftpW: 250, wprimeKj: 20 });
+    const save = vi.fn(async () => {});
+    useRiders.setState({ riders: [rider], currentId: rider.id, save });
+    render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: /^FTP/ }));
+    fireEvent.change(screen.getByLabelText('FTP (W)'), { target: { value: '300' } });
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+    const saved = (save.mock.calls[0] as unknown as [Rider])[0];
+    expect(saved.ftpW).toBe(300);
+    expect(saved.cpW).toBeUndefined();
+  });
+  it('an explicit CP is not moved by an FTP edit either', async () => {
+    const rider = newRider({ name: 'Ann', email: 'a@x.za', ftpW: 250, cpW: 250 });
+    const save = vi.fn(async () => {});
+    useRiders.setState({ riders: [rider], currentId: rider.id, save });
+    render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: /^FTP/ }));
+    fireEvent.change(screen.getByLabelText('FTP (W)'), { target: { value: '300' } });
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    await waitFor(() => expect(save).toHaveBeenCalled());
+    expect((save.mock.calls[0] as unknown as [Rider])[0]).toMatchObject({ ftpW: 300, cpW: 250 });
   });
   it('edits the current rider weight inline and saves it through the rider store', async () => {
     const rider = newRider({ name: 'Ann', email: 'a@x.za', weightKg: 85, ftpW: 227, wprimeKj: 20 });

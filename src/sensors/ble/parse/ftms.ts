@@ -18,7 +18,7 @@ export function parseIndoorBikeData(dv: DataView): IndoorBikeReading | null {
     if (f & 0x0020) { need(2); o += 2; }                                            // resistance
     if (f & 0x0040) { need(2); r.powerW = Math.max(0, dv.getInt16(o, true)); o += 2; }
     if (f & 0x0080) { need(2); o += 2; }                                            // avg power
-    if (f & 0x0100) { need(5); r.kcalTotal = dv.getUint16(o, true); o += 5; }      // total, per hour, per minute
+    if (f & 0x0100) { need(5); { const k = dv.getUint16(o, true); if (k !== 0xffff) r.kcalTotal = k; } o += 5; }      // total, per hour, per minute
     if (f & 0x0200) { need(1); r.hrBpm = dv.getUint8(o); o += 1; }
     if (f & 0x0400) { need(1); o += 1; }                                            // MET
     if (f & 0x0800) { need(2); r.elapsedS = dv.getUint16(o, true); o += 2; }

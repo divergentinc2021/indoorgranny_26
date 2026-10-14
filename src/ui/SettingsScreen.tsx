@@ -43,8 +43,8 @@ export default function SettingsScreen() {
   const commit = async (f: RiderField) => {
     const n = Number(draft);
     if (!rider || !Number.isFinite(n) || n <= 0) return;
-    // Keep CP following FTP, as the rider screen does when it is blank.
-    await saveRider({ ...rider, [f]: n, ...(f === 'ftpW' && rider.cpW === rider.ftpW ? { cpW: n } : {}) });
+    // CP is left alone: a rider with no explicit CP follows FTP inside the engine.
+    await saveRider({ ...rider, [f]: n });
     setEditing(null);
   };
   const riderRow = (f: RiderField): ReactNode => {

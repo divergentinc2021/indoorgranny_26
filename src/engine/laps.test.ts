@@ -5,7 +5,7 @@ describe('LapTracker', () => {
     const t = new LapTracker();
     t.sample(s(100, 120, 80, 5, 5, 1, 1)); t.sample(s(200, 140, 90, 5, 10, 2, 2));
     const r1 = t.close(2);
-    expect(r1).toEqual({ number: 1, startOffsetS: 0, durationS: 2, distanceM: 10, calories: 2, avgPower: 150, avgCad: 85, avgSpeedMs: 5, avgHr: 130, difHrPct: null });
+    expect(r1).toEqual({ number: 1, startOffsetS: 0, durationS: 2, distanceM: 10, calories: 2, avgPower: 150, avgCad: 85, avgSpeedMs: 5, avgHr: 130, maxPower: 200, maxHr: 140, difHrPct: null });
     t.sample(s(300, 156, 90, 10, 20, 3, 3));
     const r2 = t.close(3);
     expect(r2.number).toBe(2); expect(r2.startOffsetS).toBe(2); expect(r2.durationS).toBe(1);
@@ -27,5 +27,24 @@ describe('LapTracker', () => {
     const empty = t.close(2);                    // no samples since the last close
     expect(empty.avgHr).toBe(0);
     expect(empty.difHrPct).toBeNull();
+  });
+});
+
+describe('LapTracker maxima and zero-HR guard', () => {
+  it('tracks per-lap max power and max HR and resets them on close', () => {
+    const t = new LapTracker();
+    t.sample(s(100, 120, 80, 5, 5, 1, 1)); t.sample(s(300, 150, 90, 5, 10, 2, 2));
+    const r1 = t.close(2);
+    expect(r1.maxPower).toBe(300); expect(r1.maxHr).toBe(150);
+    t.sample(s(50, 100, 90, 5, 15, 3, 3));
+    const r2 = t.close(3);
+    expect(r2.maxPower).toBe(50); expect(r2.maxHr).toBe(100);
+  });
+  it('a lap with samples but all-zero HR after a real lap has null %dif HR', () => {
+    const t = new LapTracker();
+    t.sample(s(200, 130, 90, 5, 5, 1, 1)); t.close(1);
+    t.sample(s(200, 0, 90, 5, 10, 2, 2));
+    const r = t.close(2);
+    expect(r.avgHr).toBe(0); expect(r.difHrPct).toBeNull();
   });
 });

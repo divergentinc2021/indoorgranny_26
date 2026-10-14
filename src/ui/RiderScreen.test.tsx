@@ -29,6 +29,26 @@ describe('RiderScreen', () => {
     expect(screen.getByRole('button', { name: /^Ann/ })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('stores CP only when one was typed; blank stays undefined', async () => {
+    mount();
+    fireEvent.click(screen.getByRole('button', { name: /add rider/i }));
+    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Ann' } });
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'ann@x.za' } });
+    expect(screen.getByLabelText(/^cp/i)).toHaveValue(null);
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    await waitFor(() => expect(useRiders.getState().riders).toHaveLength(1));
+    expect(useRiders.getState().riders[0].cpW).toBeUndefined();
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Ann' }));
+    expect(screen.getByLabelText(/^cp/i)).toHaveValue(null);
+    fireEvent.change(screen.getByLabelText(/^cp/i), { target: { value: '260' } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    await waitFor(() => expect(useRiders.getState().riders[0].cpW).toBe(260));
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Ann' }));
+    fireEvent.change(screen.getByLabelText(/^cp/i), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
+    await waitFor(() => expect(useRiders.getState().riders[0].cpW).toBeUndefined());
+  });
+
   it('edits a rider in place, keeping id and power zones', async () => {
     const seed = newRider({ name: 'Ann', email: 'ann@x.za', powerZones: [['Z1', 150]] });
     await putRider(seed);

@@ -4,6 +4,21 @@ export class Stat {
   get avg() { return this.n ? this.sum / this.n : 0; }
   reset() { this.sum = 0; this.n = 0; this.max = 0; }
 }
+/**
+ * Accumulates a device-side running total (trainer distance / kcal) as growth since the first value seen.
+ * A value that goes down (the trainer reset its counter) adds nothing, so the total never goes backwards;
+ * an absent value holds the total.
+ */
+export class Cumulative {
+  total = 0; private lastV: number | undefined;
+  get seen() { return this.lastV !== undefined; }
+  push(v: number | undefined) {
+    if (v === undefined || !Number.isFinite(v)) return this.total;
+    if (this.lastV !== undefined) this.total += Math.max(0, v - this.lastV);
+    this.lastV = v;
+    return this.total;
+  }
+}
 export const caloriesMet = (weightKg: number, hours: number, met = 8) => met * weightKg * hours;
 export class DistanceIntegrator {
   meters = 0; private last = 0;

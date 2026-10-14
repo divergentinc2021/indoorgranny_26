@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import LapTable from './LapTable';
 import { powerZones } from '../../engine/zones';
 const rows = [
-  { number: 1, startOffsetS: 0, durationS: 60, distanceM: 500, calories: 10, avgPower: 150, avgCad: 85, avgSpeedMs: 8, avgHr: 130, difHrPct: null },
-  { number: 2, startOffsetS: 60, durationS: 60, distanceM: 600, calories: 12, avgPower: 260, avgCad: 90, avgSpeedMs: 10, avgHr: 143, difHrPct: 10 },
+  { number: 1, startOffsetS: 0, durationS: 60, distanceM: 500, calories: 10, avgPower: 150, avgCad: 85, avgSpeedMs: 8, avgHr: 130, maxPower: 200, maxHr: 140, difHrPct: null },
+  { number: 2, startOffsetS: 60, durationS: 60, distanceM: 600, calories: 12, avgPower: 260, avgCad: 90, avgSpeedMs: 10, avgHr: 143, maxPower: 300, maxHr: 150, difHrPct: 10 },
 ];
 describe('LapTable', () => {
   it('renders the vendor columns newest first with zone colouring and a NOW row', () => {

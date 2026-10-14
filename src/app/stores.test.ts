@@ -37,6 +37,28 @@ describe('ride store', () => {
     expect(saved.nSamples).toBeGreaterThanOrEqual(3);
     expect(useRide.getState().state).toBe('idle');
   });
+  it('the saved session keeps the rider selected at begin, even if another is picked mid-ride', async () => {
+    const a = newRider({ name: 'Ada', email: 'a@x' });
+    const b = newRider({ name: 'Bob', email: 'b@x' });
+    await useRiders.getState().save(a); await useRiders.getState().save(b);
+    useRiders.getState().select(a.id);
+    useSettings.getState().set({ countdownS: 0 });
+    useSensors.getState().live.setPaired([]);
+    useRide.getState().begin(); vi.advanceTimersByTime(3000);
+    useRiders.getState().select(b.id);
+    useRide.getState().stop();
+    const saved = await useRide.getState().save();
+    expect(saved).toMatchObject({ riderId: a.id, riderName: 'Ada' });
+  });
+  it('stop puts the closed final lap into the lap table rows', () => {
+    useSettings.getState().set({ countdownS: 0 });
+    useSensors.getState().live.setPaired([]);
+    useRide.getState().begin(); vi.advanceTimersByTime(3000);
+    expect(useRide.getState().lapRows).toHaveLength(0);
+    useRide.getState().stop();
+    expect(useRide.getState().lapRows).toHaveLength(1);
+    useRide.getState().discard();
+  });
   it('discard resets without writing', async () => {
     const before = await listSessions();
     useSettings.getState().set({ countdownS: 0 });
