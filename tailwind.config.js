@@ -17,7 +17,6 @@ export default {
           zonebg: '#d3d1c9', // NOW row / zones background
           pink: '#ff8787',
           text: '#ffffff',
-          accent: '#00bbff',
         },
         // Lap-row fills for zones 1..7: emerald, green, light green, yellow, dark yellow, orange, red (salmon).
         zone: { z1: '#7adac6', z2: '#0eef2c', z3: '#abebcb', z4: '#ffff00', z5: '#e6e600', z6: '#ffb872', z7: '#ff8787' },

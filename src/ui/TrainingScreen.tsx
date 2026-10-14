@@ -56,11 +56,11 @@ export default function TrainingScreen() {
       {confirmStop && <Dialog text="STOP this session?" yes="Yes, stop" onYes={() => { setConfirmStop(false); ride.stop(); setAskSave(true); }} onNo={() => setConfirmStop(false)} />}
       {askSave && <Dialog text="Do you want to save it?" yes="Save" no="Discard" onYes={async () => { setAskSave(false); await ride.save(); setHist(EMPTY_HIST); nav('/logs'); }} onNo={() => { setAskSave(false); ride.discard(); setHist(EMPTY_HIST); }} />}
       <div className="text-[14px] text-white px-1 mb-1">Rider: {rider?.name ?? 'Guest'}</div>
-      <Tile size="bare" label="Elapsed" value={fmtDuration(v?.elapsedS ?? 0)} sub={`lap ${fmtDuration(v?.lapS ?? 0)}${v?.prevLapS != null ? ` · prev ${fmtDuration(v.prevLapS)}` : ''}`} />
+      <Tile size="bare" label="Elapsed" value={fmtDuration(v?.elapsedS ?? 0)} sub={`lap ${fmtDuration(v?.lapS ?? 0)}${v?.prevLapS != null ? ` Â· prev ${fmtDuration(v.prevLapS)}` : ''}`} />
       <div className="grid grid-cols-3">
-        <Tile label="Power" value={Math.round(v?.powerSmooth ?? 0)} sub={`avg ${Math.round(v?.avgPower ?? 0)} · max ${Math.round(v?.maxPower ?? 0)}`} />
-        <Tile label="HR" value={Math.round(v?.hr ?? 0)} sub={`avg ${Math.round(v?.avgHr ?? 0)} · max ${Math.round(v?.maxHr ?? 0)}`} />
-        <Tile label="Cadence" value={Math.round(v?.cadenceSmooth ?? 0)} sub={`avg ${Math.round(v?.avgCad ?? 0)} · max ${Math.round(v?.maxCad ?? 0)}`} />
+        <Tile label="Power" value={Math.round(v?.powerSmooth ?? 0)} sub={`avg ${Math.round(v?.avgPower ?? 0)} Â· max ${Math.round(v?.maxPower ?? 0)}`} />
+        <Tile label="HR" value={Math.round(v?.hr ?? 0)} sub={`avg ${Math.round(v?.avgHr ?? 0)} Â· max ${Math.round(v?.maxHr ?? 0)}`} />
+        <Tile label="Cadence" value={Math.round(v?.cadenceSmooth ?? 0)} sub={`avg ${Math.round(v?.avgCad ?? 0)} Â· max ${Math.round(v?.maxCad ?? 0)}`} />
       </div>
       <div className="grid grid-cols-4">
         <Tile size="small" label="Distance" value={fmtDistance(v?.distanceM ?? 0, unit)} />

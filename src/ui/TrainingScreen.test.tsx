@@ -37,4 +37,10 @@ describe('TrainingScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /yes, stop/i }));
     fireEvent.click(screen.getByRole('button', { name: /discard/i }));
   });
+  it('renders the AVG/MAX and lap sub-lines with a real middle dot (not U+FFFD)', () => {
+    render(<MemoryRouter><TrainingScreen /></MemoryRouter>);
+    // The sub-lines are display:none below 600 px but always in the DOM.
+    expect(screen.getAllByText('avg 0 · max 0')).toHaveLength(3);
+    expect(document.body.textContent).not.toContain('�');
+  });
 });

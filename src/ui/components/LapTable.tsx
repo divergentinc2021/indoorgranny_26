@@ -3,7 +3,7 @@ import { Zone, zoneIndex } from '../../engine/zones';
 import { fmtDuration, fmtDistance, fmtSpeed } from '../../app/format';
 type Now = { number: number; durationS: number; distanceM: number; avgPower: number; avgHr: number; avgCad: number; avgSpeedMs: number };
 // Literal class strings so Tailwind can see them at build time (no dynamic bg-zone-${cls}).
-export const ZONE_BG: Record<string, string> = { z1: 'z1 bg-zone-z1', z2: 'z2 bg-zone-z2', z3: 'z3 bg-zone-z3', z4: 'z4 bg-zone-z4', z5: 'z5 bg-zone-z5', z6: 'z6 bg-zone-z6', z7: 'z7 bg-zone-z7' };
+const ZONE_BG: Record<string, string> = { z1: 'z1 bg-zone-z1', z2: 'z2 bg-zone-z2', z3: 'z3 bg-zone-z3', z4: 'z4 bg-zone-z4', z5: 'z5 bg-zone-z5', z6: 'z6 bg-zone-z6', z7: 'z7 bg-zone-z7' };
 export default function LapTable({ rows, now, zones, unit, showNow = true }: { rows: LapRow[]; now: Now; zones: Zone[]; unit: 'metric' | 'imperial'; showNow?: boolean }) {
   const cls = (w: number) => ZONE_BG[zones[zoneIndex(zones, w)].cls] ?? '';
   // Vendor phone shows Lap, Time, Avg Power, Avg HR, Avg CAD; speed, distance and %dif HR appear from 600 px.
