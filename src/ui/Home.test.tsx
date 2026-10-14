@@ -11,4 +11,19 @@ describe('Home', () => {
     for (const t of ['TRAINING', 'ACTIVITY LOGS', 'SETTINGS', 'STRUCTURED WORKOUTS', 'SENSORS']) expect(screen.getByRole('link', { name: t })).toBeInTheDocument();
     expect(useSettings.getState().licenseAccepted).toBe(true);
   });
+
+  it('names the terms dialog, focuses Accept and inerts the page behind it until accepted', () => {
+    useSettings.getState().set({ licenseAccepted: false });
+    render(<MemoryRouter><Home /></MemoryRouter>);
+    const dialog = screen.getByRole('dialog', { name: /terms and privacy/i });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    const accept = screen.getByRole('button', { name: /accept/i });
+    expect(accept).toHaveFocus();
+    const tile = screen.getByRole('link', { name: 'TRAINING' });
+    expect(tile.closest('[inert]')).not.toBeNull();
+    expect(dialog.closest('[inert]')).toBeNull();
+    fireEvent.click(accept);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'TRAINING' }).closest('[inert]')).toBeNull();
+  });
 });
