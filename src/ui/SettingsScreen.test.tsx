@@ -13,4 +13,20 @@ describe('SettingsScreen', () => {
     expect(useSettings.getState()).toMatchObject({ unitSystem: 'imperial', countdownS: 5, smoothingN: 10, wheelMm: 2096, structuredWorkoutEnabled: true });
     expect(screen.getByText(/0\.1\.0/)).toBeInTheDocument();
   });
+  it('lets the wheel circumference be typed and edited digit by digit', () => {
+    useSettings.getState().set({ wheelMm: 2105 });
+    render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
+    const input = screen.getByLabelText(/wheel/i) as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '2' } });
+    expect(input.value).toBe('2'); expect(useSettings.getState().wheelMm).toBe(2105);
+    fireEvent.change(input, { target: { value: '20' } });
+    expect(input.value).toBe('20'); expect(useSettings.getState().wheelMm).toBe(2105);
+    fireEvent.change(input, { target: { value: '2096' } });
+    expect(input.value).toBe('2096'); expect(useSettings.getState().wheelMm).toBe(2096);
+    fireEvent.change(input, { target: { value: '209' } }); // backspace keeps the draft
+    expect(input.value).toBe('209'); expect(useSettings.getState().wheelMm).toBe(2096);
+    fireEvent.blur(input); // out of range -> restored to the stored value
+    expect(input.value).toBe('2096');
+    expect(screen.getByText('1500–4000 mm')).toBeInTheDocument();
+  });
 });

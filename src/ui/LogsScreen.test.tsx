@@ -15,4 +15,16 @@ describe('LogsScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /^delete$/i }));
     await waitFor(async () => expect(await listSessions()).toHaveLength(0));
   });
+  it('shows an alert when sharing fails', async () => {
+    await saveSession({ id: 1760000000000, riderId: 'r', riderName: 'Ann', sport: 'indoor_cycling', startMs: 1760000000000, durationS: 3600, distanceM: 25000, calories: 600, nSamples: 3600, avgPower: 150, maxPower: 300, avgHr: 140, maxHr: 170, avgCad: 85, uploaded: null, synced: false }, [], []);
+    const urlApi = URL as unknown as Record<string, unknown>; const orig = urlApi.createObjectURL;
+    urlApi.createObjectURL = () => { throw new Error('boom'); };
+    try {
+      render(<MemoryRouter><LogsScreen /></MemoryRouter>);
+      await screen.findByText('Ann');
+      fireEvent.click(screen.getByRole('button', { name: /actions/i }));
+      fireEvent.click(screen.getByRole('button', { name: /share as fit/i }));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Could not share: boom');
+    } finally { urlApi.createObjectURL = orig; }
+  });
 });

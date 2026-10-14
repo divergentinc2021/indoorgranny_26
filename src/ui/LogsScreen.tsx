@@ -7,11 +7,11 @@ import { shareOrDownload } from './share';
 import { fmtDate, fmtDuration, fmtDistance } from '../app/format';
 import { useSettings } from '../app/settings-store';
 export default function LogsScreen() {
-  const [rows, setRows] = useState<SessionRecord[]>([]); const [open, setOpen] = useState<number | null>(null); const [confirmAll, setConfirmAll] = useState(false);
+  const [rows, setRows] = useState<SessionRecord[]>([]); const [open, setOpen] = useState<number | null>(null); const [confirmAll, setConfirmAll] = useState(false); const [err, setErr] = useState<{ id: number; msg: string } | null>(null);
   const unit = useSettings((s) => s.unitSystem);
   const reload = async () => setRows(await listSessions());
   useEffect(() => { void reload(); }, []);
-  const share = async (s: SessionRecord) => { const bytes = buildFit(s, await getLaps(s.id), await getSamples(s.id)); await shareOrDownload(fitFileName(s), bytes, 'application/vnd.ant.fit'); };
+  const share = async (s: SessionRecord) => { setErr(null); try { const bytes = buildFit(s, await getLaps(s.id), await getSamples(s.id)); await shareOrDownload(fitFileName(s), bytes, 'application/vnd.ant.fit'); } catch (e) { setErr({ id: s.id, msg: `Could not share: ${e instanceof Error ? e.message : String(e)}` }); } };
   return (
     <Shell title="Activity logs">
       <div className="flex justify-end mb-2"><button className="text-sm text-red-400" onClick={() => setConfirmAll(true)}>Delete all</button></div>
@@ -32,6 +32,7 @@ export default function LogsScreen() {
                 <button className="border border-red-700 text-red-400 rounded px-3 py-1" onClick={async () => { await deleteSession(s.id); setOpen(null); await reload(); }}>Delete</button>
               </div>
             )}
+            {err?.id === s.id && <p role="alert" className="mt-1 text-xs text-red-400">{err.msg}</p>}
           </li>
         ))}
       </ul>
