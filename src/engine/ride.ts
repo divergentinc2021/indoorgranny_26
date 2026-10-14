@@ -22,6 +22,7 @@ export class RideEngine {
   samples: Sample[] = [];
   laps = new LapTracker();
   startMs = 0;
+  private stopMs = 0;
   private pausedMs = 0; private pauseStartedAt = 0;
   private readonly now: () => number;
   private power = new Stat(); private hr = new Stat(); private cad = new Stat();
@@ -39,12 +40,12 @@ export class RideEngine {
   start() { if (this.state !== 'idle') return; this.state = 'recording'; this.startMs = this.now(); this.lastTickMs = this.startMs; }
   pause() { if (this.state !== 'recording') return; this.state = 'paused'; this.pauseStartedAt = this.now(); }
   resume() { if (this.state !== 'paused') return; this.pausedMs += this.now() - this.pauseStartedAt; this.state = 'recording'; this.lastTickMs = this.now(); }
-  stop() { if (this.state === 'paused') this.resume(); if (this.state === 'recording') this.state = 'stopped'; }
-  lap(): LapRow { return this.laps.close(this.elapsedS()); }
+  stop() { if (this.state === 'paused') this.resume(); if (this.state === 'recording') { this.stopMs = this.now(); this.state = 'stopped'; } }
+  lap(): LapRow | null { return this.state === 'recording' ? this.laps.close(this.elapsedS()) : null; }
 
   private elapsedS(): number {
     if (this.state === 'idle') return 0;
-    const end = this.state === 'paused' ? this.pauseStartedAt : this.now();
+    const end = this.state === 'paused' ? this.pauseStartedAt : this.state === 'stopped' ? this.stopMs : this.now();
     return Math.floor((end - this.startMs - this.pausedMs) / 1000) + 1;
   }
 

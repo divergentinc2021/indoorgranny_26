@@ -31,7 +31,7 @@ describe('RideEngine', () => {
     const { e, advance } = mk();
     e.start();
     for (let i = 0; i < 60; i++) { e.tick(live(250, 90, 90, 10)); advance(1000); }
-    const row = e.lap();
+    const row = e.lap()!;
     expect(row.number).toBe(1); expect(row.avgPower).toBe(250); expect(e.view.lapNumber).toBe(2);
     expect(e.view.pctFtp).toBe(100); expect(e.view.pctHrMax).toBe(50);
     expect(e.view.kJ).toBeCloseTo((250 * 61) / 1000, 6);        // elapsed is 61 after 60 advances
@@ -41,6 +41,32 @@ describe('RideEngine', () => {
     expect(e.view.lapS).toBe(0); expect(e.view.prevLapS).toBe(61); // lap closed at elapsed 61; next tick (t=60 s) is also elapsed 61 → 0 s into lap 2
     e.tick(live(250, 90, 90, 10));                                  // t=61 s → elapsed 62
     expect(e.view.lapS).toBe(1); expect(e.samples[e.samples.length - 1].lap).toBe(2);
+  });
+  it('stop freezes elapsed and kJ', () => {
+    const { e, advance } = mk();
+    e.start(); e.tick(live(200)); advance(1000); e.tick(live(200)); advance(1000);
+    e.stop();
+    const el = e.view.elapsedS, kj = e.view.kJ;
+    expect(el).toBe(3);
+    advance(10_000);
+    expect(e.view.elapsedS).toBe(el); expect(e.view.kJ).toBe(kj);
+  });
+  it('stop from paused excludes paused time and does not drift', () => {
+    const { e, advance } = mk();
+    e.start(); e.tick(live(200)); advance(1000);
+    e.pause(); const atPause = e.view.elapsedS;
+    advance(5000); e.stop();
+    expect(e.state).toBe('stopped'); expect(e.view.elapsedS).toBe(atPause); expect(atPause).toBe(2);
+    advance(10_000);
+    expect(e.view.elapsedS).toBe(atPause);
+  });
+  it('lap() returns null unless recording', () => {
+    const { e, advance } = mk();
+    expect(e.lap()).toBeNull(); expect(e.laps.rows).toHaveLength(0);
+    e.start(); e.tick(live(200)); advance(1000);
+    e.pause(); expect(e.lap()).toBeNull(); expect(e.laps.rows).toHaveLength(0);
+    e.resume(); e.stop();
+    expect(e.lap()).toBeNull(); expect(e.laps.rows).toHaveLength(0); expect(e.view.lapNumber).toBe(1);
   });
   it('trainer distance and kcal override integration when present', () => {
     const { e, advance } = mk();
