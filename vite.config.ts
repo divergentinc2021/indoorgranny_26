@@ -30,6 +30,5 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
     globals: true,
-    poolOptions: { forks: { execArgv: ['--no-experimental-webstorage'] } },
   },
 });

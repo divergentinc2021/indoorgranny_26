@@ -1,4 +1,6 @@
+import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { useRiders } from './app/rider-store';
 import Home from './ui/Home';
 import RiderScreen from './ui/RiderScreen';
 import SensorsScreen from './ui/SensorsScreen';
@@ -8,6 +10,7 @@ import SessionDetail from './ui/SessionDetail';
 import WorkoutsScreen from './ui/WorkoutsScreen';
 import SettingsScreen from './ui/SettingsScreen';
 export default function App() {
+  useEffect(() => { void useRiders.getState().load(); }, []);
   return (
     <Routes>
       <Route path="/" element={<Home />} />
