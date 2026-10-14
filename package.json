@@ -2,10 +2,6 @@
   "name": "indoorgranny_26",
   "version": "0.1.0",
   "description": "Indoor cycling studio app for Granny Gear: a web app (PWA) that reads heart rate, power, cadence and speed sensors, runs a ride with laps, zones and W'bal, and keeps a local history with FIT export.",
-  "main": "index.js",
-  "directories": {
-    "doc": "docs"
-  },
   "scripts": {
     "test": "vitest run",
     "dev": "vite",
@@ -13,11 +9,9 @@
     "preview": "vite preview",
     "test:watch": "vitest"
   },
-  "keywords": [],
-  "author": "",
   "license": "MIT",
   "type": "module",
-  "private": "true",
+  "private": true,
   "dependencies": {
     "@garmin/fitsdk": "^21.218.0",
     "chart.js": "^4.5.1",

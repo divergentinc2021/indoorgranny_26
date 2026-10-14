@@ -1,3 +1,4 @@
 # Third-party licences
-- @garmin/fitsdk — Garmin FIT SDK licence (https://developer.garmin.com/fit/download/), permits use in applications.
-- React, react-router-dom, Zustand, idb, Chart.js, Tailwind CSS, Vite, vite-plugin-pwa — MIT.
+- @garmin/fitsdk — FIT Protocol License Agreement — see LICENSE.txt shipped in the package; review before public release.
+- idb — ISC.
+- React, react-router-dom, Zustand, Chart.js, Tailwind CSS, Vite, vite-plugin-pwa — MIT.
