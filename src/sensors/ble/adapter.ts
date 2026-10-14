@@ -30,6 +30,8 @@ export class BleAdapter implements SensorSource {
 
   async pair(slot: Slot): Promise<PairedDevice> {
     if (!this.bt) throw new Error('Web Bluetooth is not available in this browser. Use Chrome on Android.');
+    const prev = this.devices.get(slot);
+    if (prev) await this.disconnect({ slot, id: prev.id, name: prev.name ?? 'Unnamed' });
     const dev = await this.bt.requestDevice({ filters: [{ services: [SLOT_SERVICE[slot]] }], optionalServices: ALL_SERVICES });
     const d: PairedDevice = { slot, id: dev.id, name: dev.name ?? 'Unnamed' };
     this.devices.set(slot, dev);
@@ -47,26 +49,46 @@ export class BleAdapter implements SensorSource {
 
   async disconnect(d: PairedDevice): Promise<void> {
     const dev = this.devices.get(d.slot); this.devices.delete(d.slot);
+    this.resetCounters(d.slot);
+    this.dropListener(d.slot);
     dev?.gatt?.disconnect(); this.setState(d.slot, 'unpaired');
   }
 
+  private listeners = new Map<Slot, { ch: BluetoothRemoteGATTCharacteristic; fn: (ev: Event) => void }>();
+  private dropListener(slot: Slot) {
+    const l = this.listeners.get(slot); if (!l) return;
+    l.ch.removeEventListener('characteristicvaluechanged', l.fn); this.listeners.delete(slot);
+  }
+
+  /** True while this device is still the one the slot is paired to (false once forgotten or replaced). */
+  private current(slot: Slot, dev: BluetoothDevice) { return this.devices.get(slot) === dev; }
+
   private async connectDevice(slot: Slot, dev: BluetoothDevice, attempt = 0): Promise<void> {
+    if (!this.current(slot, dev)) return;
     this.setState(slot, 'connecting');
     try {
       const gatt = await dev.gatt!.connect();
+      if (!this.current(slot, dev)) { gatt.disconnect(); return; }
       const svc = await gatt.getPrimaryService(SLOT_SERVICE[slot]);
       const ch = await svc.getCharacteristic(SLOT_CHAR[slot]);
       this.resetCounters(slot);
-      ch.addEventListener('characteristicvaluechanged', (ev) => {
-        const v = (ev.target as BluetoothRemoteGATTCharacteristic).value; if (v) this.handleValue(slot, SLOT_CHAR[slot], v, Date.now());
-      });
       await ch.startNotifications();
+      if (!this.current(slot, dev)) { gatt.disconnect(); return; }
+      this.dropListener(slot);
+      const fn = (ev: Event) => {
+        const v = (ev.target as BluetoothRemoteGATTCharacteristic).value; if (v) this.handleValue(slot, SLOT_CHAR[slot], v, Date.now());
+      };
+      ch.addEventListener('characteristicvaluechanged', fn);
+      this.listeners.set(slot, { ch, fn });
       dev.addEventListener('gattserverdisconnected', () => {
+        if (!this.current(slot, dev)) return;
         this.setState(slot, 'offline', 'Disconnected, reconnecting…');
-        if (this.devices.get(slot) === dev) this.reconnect(slot, dev);
+        this.reconnect(slot, dev);
       }, { once: true });
       this.setState(slot, 'connected');
     } catch (e) {
+      if (!this.current(slot, dev)) return;
+      dev.gatt?.disconnect(); // do not leave a half-set-up GATT link open
       if (attempt < 3) { await new Promise((r) => setTimeout(r, 2000 * 2 ** attempt)); return this.connectDevice(slot, dev, attempt + 1); }
       this.setState(slot, 'offline', (e as Error).message);
     }
