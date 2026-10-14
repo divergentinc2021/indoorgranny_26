@@ -1,15 +1,20 @@
 import { create } from 'zustand';
 import { RideEngine, type RideState, type RideView } from '../engine/ride';
 import type { LapRow } from '../engine/laps';
-import { saveSession, type SessionRecord } from '../data/sessions';
+import { saveSession, deleteSession, type SessionRecord } from '../data/sessions';
 import { remote } from '../data/remote';
 import { useRiders } from './rider-store';
+import type { Rider } from '../data/riders';
 import { useSettings } from './settings-store';
 import { useSensors } from './sensor-store';
 
 interface S { engine: RideEngine | null; view: RideView | null; state: RideState; lapRows: LapRow[]; countdownLeft: number | null; begin(opts?: { skipCountdown?: boolean }): void; pause(): void; resume(): void; lap(): void; stop(): void; save(): Promise<SessionRecord>; discard(): void }
 let timer: ReturnType<typeof setInterval> | null = null;
 const clear = () => { if (timer) clearInterval(timer); timer = null; };
+const toRecord = (e: RideEngine, rider: Rider | undefined): SessionRecord => {
+  const v = e.view;
+  return { id: e.startMs, riderId: rider?.id ?? '', riderName: rider?.name ?? 'Guest', sport: 'indoor_cycling', startMs: e.startMs, durationS: Math.max(0, v.elapsedS - 1), distanceM: v.distanceM, calories: v.calories, nSamples: e.samples.length, avgPower: v.avgPower, maxPower: v.maxPower, avgHr: v.avgHr, maxHr: v.maxHr, avgCad: v.avgCad, uploaded: null, synced: false };
+};
 
 export const useRide = create<S>((set, get) => ({
   engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null,
@@ -22,7 +27,12 @@ export const useRide = create<S>((set, get) => ({
     const run = () => {
       engine.start(); set({ countdownLeft: null, state: 'recording' });
       clear();
-      timer = setInterval(() => { engine.tick(useSensors.getState().live.snapshot(Date.now())); set({ view: engine.view, state: engine.state }); }, 1000);
+      timer = setInterval(() => {
+        engine.tick(useSensors.getState().live.snapshot(Date.now()));
+        set({ view: engine.view, state: engine.state });
+        // Partial flush: a crash or tab kill loses at most ~10 s. saveSession uses put, so repeats are idempotent.
+        if (engine.samples.length > 0 && engine.samples.length % 10 === 0) void saveSession(toRecord(engine, useRiders.getState().current()), engine.laps.rows, engine.samples.slice(-10));
+      }, 1000);
     };
     if (st.countdownS > 0 && !opts?.skipCountdown) {
       set({ countdownLeft: st.countdownS });
@@ -43,13 +53,11 @@ export const useRide = create<S>((set, get) => ({
     const e = get().engine; if (!e) throw new Error('no ride');
     if (e.state !== 'stopped') throw new Error('ride not stopped');
     clear();
-    const rider = useRiders.getState().current();
-    const v = e.view;
-    const s: SessionRecord = { id: e.startMs, riderId: rider?.id ?? '', riderName: rider?.name ?? 'Guest', sport: 'indoor_cycling', startMs: e.startMs, durationS: Math.max(0, v.elapsedS - 1), distanceM: v.distanceM, calories: v.calories, nSamples: e.samples.length, avgPower: v.avgPower, maxPower: v.maxPower, avgHr: v.avgHr, maxHr: v.maxHr, avgCad: v.avgCad, uploaded: null, synced: false };
+    const s = toRecord(e, useRiders.getState().current());
     await saveSession(s, e.laps.rows, e.samples);
     if (remote.enabled) void remote.pushSession(s);
     set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null });
     return s;
   },
-  discard: () => { clear(); set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null }); },
+  discard: () => { const e = get().engine; if (e && e.startMs) void deleteSession(e.startMs); clear(); set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null }); },
 }));
