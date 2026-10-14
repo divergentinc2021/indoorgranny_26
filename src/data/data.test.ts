@@ -31,6 +31,7 @@ describe('sessions', () => {
     expect(await getSamples(1000)).toHaveLength(2);
     expect((await getSession(2000))?.nSamples).toBe(2);
     await deleteSession(1000);
+    expect(await getLaps(1000)).toHaveLength(0);
     expect(await getSamples(1000)).toHaveLength(0);
     expect(await getSession(1000)).toBeUndefined();
     await deleteAllSessions();
