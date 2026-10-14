@@ -33,6 +33,8 @@ npm run build       # production build into dist/
 Cloudflare Pages, git-connected: push to `main` for production; every other branch gets a preview URL.
 
 - Pages project: `indoorgranny-26`
+- Production URL: `https://indoorgranny-26.pages.dev`
+- Branch preview URL pattern: `https://<branch>.indoorgranny-26.pages.dev`
 - Account: divergentbiz (`7ad30a1a…`)
 - Build command `npm run build`, output directory `dist`
 

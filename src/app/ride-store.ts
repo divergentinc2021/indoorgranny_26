@@ -10,6 +10,8 @@ import { useSensors } from './sensor-store';
 
 interface S { engine: RideEngine | null; view: RideView | null; state: RideState; lapRows: LapRow[]; countdownLeft: number | null; begin(opts?: { skipCountdown?: boolean }): void; pause(): void; resume(): void; lap(): void; stop(): void; save(): Promise<SessionRecord>; discard(): void }
 let timer: ReturnType<typeof setInterval> | null = null;
+// Tail of the most recent partial flush; discard() waits on it so a late flush can never resurrect a deleted row.
+let lastFlush: Promise<unknown> = Promise.resolve();
 const clear = () => { if (timer) clearInterval(timer); timer = null; };
 const toRecord = (e: RideEngine, rider: Rider | undefined): SessionRecord => {
   const v = e.view;
@@ -28,10 +30,11 @@ export const useRide = create<S>((set, get) => ({
       engine.start(); set({ countdownLeft: null, state: 'recording' });
       clear();
       timer = setInterval(() => {
-        engine.tick(useSensors.getState().live.snapshot(Date.now()));
+        const sample = engine.tick(useSensors.getState().live.snapshot(Date.now()));
         set({ view: engine.view, state: engine.state });
         // Partial flush: a crash or tab kill loses at most ~10 s. saveSession uses put, so repeats are idempotent.
-        if (engine.samples.length > 0 && engine.samples.length % 10 === 0) void saveSession(toRecord(engine, useRiders.getState().current()), engine.laps.rows, engine.samples.slice(-10));
+        // Gate on the tick result: tick() returns null while paused, so the length stays frozen and would re-flush every second.
+        if (sample && engine.samples.length % 10 === 0) lastFlush = saveSession(toRecord(engine, useRiders.getState().current()), engine.laps.rows, engine.samples.slice(-10)).catch(() => {});
       }, 1000);
     };
     if (st.countdownS > 0 && !opts?.skipCountdown) {
@@ -59,5 +62,5 @@ export const useRide = create<S>((set, get) => ({
     set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null });
     return s;
   },
-  discard: () => { const e = get().engine; if (e && e.startMs) void deleteSession(e.startMs); clear(); set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null }); },
+  discard: () => { const e = get().engine; if (e && e.startMs) { const id = e.startMs; void lastFlush.then(() => deleteSession(id)).catch(() => {}); } clear(); set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null }); },
 }));

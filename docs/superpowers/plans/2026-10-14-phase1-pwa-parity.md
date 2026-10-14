@@ -2673,12 +2673,12 @@ Device: Nothing Phone (1), Chrome. Date: pending.
 
 | Step | Check | Result |
 |---|---|---|
-| 1 | Install via Add to Home screen, launch standalone | pending — awaiting Pages deploy (Task 1b) |
-| 2 | Pair heart rate strap, value within 2 s | pending — awaiting Pages deploy (Task 1b) |
-| 3 | Pair trainer (KICKR Core, FTMS): power, cadence, speed | pending — awaiting Pages deploy (Task 1b) |
-| 4 | 5 s countdown, tiles live, screen stays on 5 min | pending — awaiting Pages deploy (Task 1b) |
-| 5 | Two laps: newest first, zone colour, %dif HR on lap 2 | pending — awaiting Pages deploy (Task 1b) |
-| 6 | Pause 30 s then Restart: elapsed did not advance | pending — awaiting Pages deploy (Task 1b) |
-| 7 | Stop, confirm, Save | pending — awaiting Pages deploy (Task 1b) |
-| 8 | Activity logs row, Share as FIT, manual Strava upload shows power + HR | pending — awaiting Pages deploy (Task 1b) |
-| 9 | Airplane mode relaunch: opens offline, history intact | pending — awaiting Pages deploy (Task 1b) |
+| 1 | Install via Add to Home screen, launch standalone | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
+| 2 | Pair heart rate strap, value within 2 s | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
+| 3 | Pair trainer (KICKR Core, FTMS): power, cadence, speed | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
+| 4 | 5 s countdown, tiles live, screen stays on 5 min | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
+| 5 | Two laps: newest first, zone colour, %dif HR on lap 2 | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
+| 6 | Pause 30 s then Restart: elapsed did not advance | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
+| 7 | Stop, confirm, Save | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
+| 8 | Activity logs row, Share as FIT, manual Strava upload shows power + HR | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
+| 9 | Airplane mode relaunch: opens offline, history intact | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
