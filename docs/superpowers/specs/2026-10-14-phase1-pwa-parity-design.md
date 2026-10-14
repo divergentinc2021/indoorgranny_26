@@ -164,6 +164,7 @@ Message set mirrors the vendor so downstream tools behave the same: FileId (type
 
 ## 12. Open items carried to later phases
 
-- D1 schema mirrors the `riders` store; CSV import maps the columns in CLEANROOM-SPEC §5.
+- **Phase 2 is a rider/studio portal modelled on SelfLoops, stripped to indoor cycling, in Granny Gear's look** (Laurent, 2026-10-14). Reference: `docs/reference/selfloops-portal-notes.md`. Rider side: dashboard (week / year-to-date / all-time stats, health card with weight/HRrest/HRmax/FTP, activity calendar), activities list with FIT download and Strava status, profile with Strava connect/revoke, my sensors. Studio side: rider list with CSV import and edit-in-place, per-rider Strava link state. Same Cloudflare Pages project, Functions + D1, OTP admin gate.
+- D1 schema mirrors the `riders` store; CSV import maps the columns in CLEANROOM-SPEC §5. Phase 1 stores sessions locally; the portal needs sessions pushed to D1 on save, so phase 1 keeps `sessions.uploaded` and a `sessions.synced` flag reserved.
 - Strava: register the API application early; new apps are capped at one connected athlete until Strava raises the limit.
 - ANT: the JS ANT stack consumes raw ANT frames from either WebUSB or the tablet bridge; CycleOps payload decoding is written once there.
