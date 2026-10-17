@@ -21,7 +21,7 @@ export default defineConfig({
       },
       workbox: {
         // Default is js,css,html only; the Logs icon and bundled workouts must work offline too.
-        globPatterns: ['**/*.{js,css,html,png,svg,webmanifest,json}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,webmanifest,json,seconds}'],
         navigateFallback: '/index.html',
         runtimeCaching: [{ urlPattern: /\/api\//, handler: 'NetworkOnly' }],
       },
