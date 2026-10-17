@@ -175,3 +175,8 @@ What worked on Laurent's own Click (author's notes, no tests in that repo):
 - Settings → Sensors gains a `Zwift Click` slot row (Pair / Forget / battery). Readings never enter `LiveStore` (it is a controller, not a sensor).
 
 ANTicP's `.seconds` reader only took `packs[0].items[0]` and mapped colours `0→Z1, 5→Z2, 4→Z3, 3→Z4, 6→Z5`; our parser (all items, keyword-first mapping) already supersedes it. ANTicP's interval timer advanced intervals without creating laps and had no beep/vibration; ours does both.
+
+## 17. v15 (Laurent, 2026-10-17). Reference `docs/reference/brand/look-v15.html`; bike reference photo `docs/reference/brand/ref-300pro.avif`.
+- **The 300 Pro has its flywheel at the REAR** (enclosed drive from the crank back to the flywheel under the saddle). Illustration regenerated as `docs/reference/brand/gen/bike300pro-rear.jpg`; callouts 1–4 and the two Gym-Settings highlight rings (pedals/crank = power meter, rear flywheel = CycleOps hub id) placed accordingly by percentage.
+- **No `.seconds` import on the phone.** Plans come from the portal (e-mail intake or upload). The app's Import .seconds button is PARKED (code stays behind a hidden flag `?import=1` for Laurent's own testing; not shown to riders).
+- Portal Studio block: three equal columns, labels on one line (Studio name · Join code · Broadcaster URL). Bike adjustment toggle: standard 34×18 switch with a 12 px knob.

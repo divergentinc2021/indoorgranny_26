@@ -1,0 +1,31 @@
+{
+  "prompt": "Clean technical line illustration of a CycleOps 300 Pro indoor cycling bike in exact side view, facing left, centred, filling the frame. Important: the heavy flywheel is at the REAR of the bike, behind the seat post, driven by an exposed chain from the crank at the centre; the front has only the handlebar post and a small stabiliser foot. Matte black steel frame, large rear flywheel in a round guard, crank arms with pedals under the rider's position, long adjustable seat post with a slotted numbered scale, saddle on a horizontal fore-aft slider, tall handlebar post at the front with a slotted scale and a horizontal fore-aft slider under the multi-position handlebar, resistance knob on the top tube, stabiliser feet with levelling bolts, transport wheels at the front foot. White and light grey strokes with subtle grey shading, flat vector style, on a flat solid dark charcoal background (hex 1f1f1f), no labels, no numbers, no text, no logos, no floor line, no shadow",
+  "revised_prompt": null,
+  "endpoint": "generations",
+  "params": {
+    "model": "gpt-image-2",
+    "prompt": "Clean technical line illustration of a CycleOps 300 Pro indoor cycling bike in exact side view, facing left, centred, filling the frame. Important: the heavy flywheel is at the REAR of the bike, behind the seat post, driven by an exposed chain from the crank at the centre; the front has only the handlebar post and a small stabiliser foot. Matte black steel frame, large rear flywheel in a round guard, crank arms with pedals under the rider's position, long adjustable seat post with a slotted numbered scale, saddle on a horizontal fore-aft slider, tall handlebar post at the front with a slotted scale and a horizontal fore-aft slider under the multi-position handlebar, resistance knob on the top tube, stabiliser feet with levelling bolts, transport wheels at the front foot. White and light grey strokes with subtle grey shading, flat vector style, on a flat solid dark charcoal background (hex 1f1f1f), no labels, no numbers, no text, no logos, no floor line, no shadow",
+    "n": 1,
+    "size": "1536x1024",
+    "quality": "medium",
+    "output_format": "jpeg",
+    "output_compression": 80
+  },
+  "inputs": [],
+  "mask": null,
+  "usage": {
+    "input_tokens": 222,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 222
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1594
+  },
+  "created": 1792245166,
+  "seconds": 24.8
+}
