@@ -21,17 +21,17 @@ export default function LogsScreen() {
       <ul>
         {rows.map((s) => (
           <li key={s.id} className="mb-2">
-            <div className="flex items-stretch bg-gg-strip text-white">
-            <Link to={`/logs/${s.id}`} className="flex-1 min-w-0 flex items-center p-[5px]">
+            <Link to={`/logs/${s.id}`} className="flex items-center bg-gg-strip text-white p-[5px]">
               <img src="/img/bike.png" alt="" width={48} height={48} className="flex-shrink-0 mr-[5px]" />
               <div className="flex-1 min-w-0">
               <div className="flex justify-between"><span>{fmtDate(s.startMs)}</span><span className="text-sm">{s.uploaded ? `#${s.uploaded.remoteId}` : ''}</span></div>
               <div className="flex justify-between text-sm mt-1"><span>{s.riderName}</span><span className="tabular-nums">{fmtDuration(s.durationS)}</span><span>{fmtDistance(s.distanceM, unit)}</span><span>{Math.round(s.calories)} kcal</span></div>
               </div>
             </Link>
-            <button className="flex-shrink-0 px-3 font-bold text-sm border-l-2 border-white" onClick={() => void share(s)}>Download FIT</button>
+            <div className="mt-1 flex items-center justify-between">
+              <button className="text-xs font-bold text-gg-bg" aria-label={`Actions for ${fmtDate(s.startMs)}`} onClick={() => setOpen(open === s.id ? null : s.id)}>Actions</button>
+              <button className="bg-gg-strip text-white font-bold text-sm px-3 py-1" onClick={() => void share(s)}>Download FIT</button>
             </div>
-            <button className="mt-1 text-xs font-bold text-gg-bg" aria-label={`Actions for ${fmtDate(s.startMs)}`} onClick={() => setOpen(open === s.id ? null : s.id)}>Actions</button>
             {open === s.id && (
               <div className="mt-2 flex text-sm">
                 <button className="mr-2 border-2 border-gg-bg rounded-[15px] px-3 py-1 opacity-50" disabled title="Available after the portal is connected">Upload</button>
