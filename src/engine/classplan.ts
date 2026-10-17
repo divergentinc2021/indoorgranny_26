@@ -16,8 +16,9 @@ export const zoneFor = (name: string, color: number | undefined): Zone => {
   return (color !== undefined && COLOURS[color]) || 2;
 };
 
+// If stripping leaves nothing (a name that is only a counter and a time), show the trimmed raw name rather than a blank bar.
 export const displayNameOf = (name: string): string => name
-  .replace(/^(?:\S+\s+)*?\d+\/\d+\s+/, '').replace(/\s*\d{1,2}:\d{2}\s*$/, '').replace(/(^|\s)\d+\+(?=\s|$)/g, ' ').replace(/\s+/g, ' ').trim();
+  .replace(/^(?:\S+\s+)*?\d+\/\d+\s+/, '').replace(/\s*\d{1,2}:\d{2}\s*$/, '').replace(/(^|\s)\d+\+(?=\s|$)/g, ' ').replace(/\s+/g, ' ').trim() || name.trim();
 
 export const slug = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 

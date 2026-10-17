@@ -20,7 +20,7 @@ export default function WorkoutsScreen() {
         {cp.plans.map((p) => (
           <li key={p.id} className={`p-[5px] flex items-center border-b border-white ${p.id === cp.selectedId ? 'bg-gg-strip' : ''}`}>
             <button className="flex-1 text-left" onClick={() => { if (p.id === cp.selectedId) { cp.deselect(); setMsg('No class plan selected — START runs a normal ride'); } else { cp.select(p.id); setMsg(`${p.title} selected`); } }}>
-              <div className={`text-[20px] font-bold ${p.id === cp.selectedId ? 'text-white' : 'text-gg-strip'}`}>{p.title}{p.dates.includes(today) && <span className="ml-2 align-middle rounded-full bg-gg-strip px-2 text-[12px] font-bold text-white">today</span>}</div>
+              <div className={`text-[20px] font-bold ${p.id === cp.selectedId ? 'text-white' : 'text-gg-strip'}`}>{p.title}{p.dates.includes(today) && <span className={`ml-2 align-middle rounded-full ${p.id === cp.selectedId ? 'bg-gg-bg' : 'bg-gg-strip'} px-2 text-[12px] font-bold text-white`}>today</span>}</div>
               <div className="text-[20px] text-white">{fmtDuration(p.totalS)} · {p.intervals.length} intervals</div>
             </button>
             {p.source !== 'bundled' && <button className="ml-2 text-[14px] text-white underline" onClick={() => cp.remove(p.id)}>Remove</button>}

@@ -23,6 +23,7 @@ describe('parseSecondsFile', () => {
     expect(plans[0].dates).toEqual(['2026-10-19', '2026-10-20']);
     expect(plans[3].dates).toEqual(['2026-10-28', '2026-10-29']);
   });
+  it('a bare {intervals} input gets a local: id', () => expect(parseSecondsFile({ intervals: [{ name: 'Easy', duration: 30, color: 0 }] })[0].id.startsWith('local:')).toBe(true));
   it('defaults source to seconds', () => expect(parseSecondsFile(fixture)[0].source).toBe('seconds'));
   it('every fixture interval resolves by keyword, not colour', () => {
     const needColour = plans.flatMap((p) => p.intervals.map((i) => i.name)).filter((n) => !/sprint|neuro|leg speed|wind[\s-]?up|anaerobic|vo2|threshold|tempo|endurance|easy|recover|cool|warm/i.test(n));
@@ -76,6 +77,13 @@ describe('displayNameOf', () => {
     expect(displayNameOf('Upper VO2 100+ 0:30')).toBe('Upper VO2');
     expect(displayNameOf('Cool Down 2:00')).toBe('Cool Down');
     expect(displayNameOf('Wind Up Leg Speed 0:20')).toBe('Wind Up Leg Speed');
+  });
+  it('falls back to the trimmed raw name when stripping leaves nothing', () => {
+    expect(displayNameOf('Threshold 3/4 1:00')).toBe('Threshold 3/4 1:00');
+    expect(displayNameOf('1/2 0:30')).toBe('1/2 0:30');
+  });
+  it('never yields an empty displayName for a named fixture interval', () => {
+    for (const p of parseSecondsFile(fixture)) for (const i of p.intervals) if (i.name.trim()) expect(i.displayName).not.toBe('');
   });
 });
 

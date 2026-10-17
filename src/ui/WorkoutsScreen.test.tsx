@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import WorkoutsScreen from './WorkoutsScreen';
 import { useWorkouts } from '../app/workout-store';
@@ -61,6 +61,16 @@ describe('WorkoutsScreen', () => {
       expect(screen.getAllByRole('button', { name: /remove/i })).toHaveLength(1);
       fireEvent.click(screen.getByRole('button', { name: /remove/i }));
       expect(useClassPlans.getState().plans).toHaveLength(1);
+    });
+    it('the today badge is a cyan pill on an unselected row and dark-on-cyan (bg-gg-bg text-white) on the selected row', () => {
+      vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 19, 9, 0, 0));
+      const ps = fixture(); useClassPlans.getState().add(ps);
+      const { rerender } = render(<MemoryRouter><WorkoutsScreen /></MemoryRouter>);
+      const badge = () => screen.getByText('today');
+      expect(badge()).toHaveClass('bg-gg-strip', 'text-white'); expect(badge()).not.toHaveClass('bg-gg-bg');
+      act(() => { useClassPlans.getState().select(ps[0].id); });
+      rerender(<MemoryRouter><WorkoutsScreen /></MemoryRouter>);
+      expect(badge()).toHaveClass('bg-gg-bg', 'text-white'); expect(badge()).not.toHaveClass('bg-gg-strip');
     });
     it('tapping the selected plan deselects it, says so, and the auto-pick does not re-select it that day', () => {
       vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 19, 9, 0, 0));
