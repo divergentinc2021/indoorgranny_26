@@ -1,0 +1,31 @@
+{
+  "prompt": "Pixel art game sprite: a road cyclist seen from directly behind and slightly above, riding away from the viewer, red jersey with white and grey shoulder panels, black shorts, red helmet, on a black road bike, crisp retro pixel style like a classic endless runner game, chunky pixels, clean outline, centered, isolated on a fully transparent background, no shadow, no ground, no scenery, no text",
+  "revised_prompt": null,
+  "endpoint": "generations",
+  "params": {
+    "model": "gpt-image-1",
+    "prompt": "Pixel art game sprite: a road cyclist seen from directly behind and slightly above, riding away from the viewer, red jersey with white and grey shoulder panels, black shorts, red helmet, on a black road bike, crisp retro pixel style like a classic endless runner game, chunky pixels, clean outline, centered, isolated on a fully transparent background, no shadow, no ground, no scenery, no text",
+    "n": 1,
+    "size": "1024x1024",
+    "quality": "medium",
+    "output_format": "png",
+    "background": "transparent"
+  },
+  "inputs": [],
+  "mask": null,
+  "usage": {
+    "input_tokens": 86,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 86
+    },
+    "output_tokens": 1056,
+    "output_tokens_details": {
+      "image_tokens": 1056,
+      "text_tokens": 0
+    },
+    "total_tokens": 1142
+  },
+  "created": 1792247550,
+  "seconds": 22.5
+}
