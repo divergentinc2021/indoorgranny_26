@@ -4,7 +4,7 @@ import { ClassPlan, isoDay, parseSecondsFile } from '../engine/classplan';
 interface Res { added: number; skipped: number }
 interface S {
   plans: ClassPlan[]; selectedId: string | null; autoPickedOn: string | null;
-  add(plans: ClassPlan[]): Res; remove(id: string): void; select(id: string | null): void; selected(): ClassPlan | null;
+  add(plans: ClassPlan[]): Res; remove(id: string): void; select(id: string | null): void; deselect(today?: string): void; selected(): ClassPlan | null;
   todays(today?: string): ClassPlan | null; autoPickToday(today?: string): void; loadBundled(): Promise<void>; importFile(text: string): Res;
 }
 export const useClassPlans = create<S>()(persist((set, get) => ({
@@ -17,6 +17,8 @@ export const useClassPlans = create<S>()(persist((set, get) => ({
   },
   remove: (id) => { const p = get().plans.find((x) => x.id === id); if (!p || p.source === 'bundled') return; set((s) => ({ plans: s.plans.filter((x) => x.id !== id), selectedId: s.selectedId === id ? null : s.selectedId })); },
   select: (id) => set({ selectedId: id }),
+  // Deselecting is a manual choice for today: burn autoPickedOn so the auto-pick does not put the plan straight back.
+  deselect: (today = isoDay(new Date())) => set({ selectedId: null, autoPickedOn: today }),
   selected: () => get().plans.find((p) => p.id === get().selectedId) ?? null,
   todays: (today = isoDay(new Date())) => get().plans.find((p) => p.dates.includes(today)) ?? null,
   autoPickToday: (today = isoDay(new Date())) => {

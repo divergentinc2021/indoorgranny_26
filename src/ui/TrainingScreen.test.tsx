@@ -196,8 +196,9 @@ describe('TrainingScreen class mode', () => {
     expect(screen.getByRole('button', { name: 'Next interval' })).toHaveClass('col-span-2');
     expect(btn(/^pause$/i).parentElement).toHaveClass('grid-cols-4');
     adv(9);
-    const done = screen.getByRole('button', { name: 'Next interval' });
-    expect(done).toHaveTextContent('Class done — free ride'); expect(done).toHaveClass('bg-zone-z1');
+    const done = screen.getByText('Class done — free ride');
+    expect(done).toHaveAttribute('role', 'status'); expect(done).not.toHaveAttribute('tabindex'); expect(done).not.toHaveAttribute('aria-label'); expect(done).toHaveClass('bg-zone-z1');
+    expect(screen.queryByRole('button', { name: 'Next interval' })).toBeNull();
     expect(screen.queryByTestId('class-fill')).toBeNull();
     const laps = useRide.getState().lapRows.length;
     fireEvent.click(done); expect(useRide.getState().lapRows).toHaveLength(laps);
@@ -212,8 +213,15 @@ describe('TrainingScreen class mode', () => {
     expect(btn(/^pause$/i)).not.toHaveClass('text-[28px]');
     expect(screen.getByRole('button', { name: 'Next interval' }).firstElementChild!.nextElementSibling).toHaveClass('flex', 'flex-col', 'items-center', 'justify-center', 'h-full');
   });
+  it('two rapid clicks on the bar right after START CLASS close no lap (tap guard)', () => {
+    open(PLAN); warmUp(); fireEvent.click(btn(/^start class$/i)); adv(1);
+    const bar = screen.getByRole('button', { name: 'Next interval' });
+    fireEvent.click(bar); fireEvent.click(bar);
+    expect(useRide.getState().lapRows).toHaveLength(1);   // only the Warm up lap from START CLASS
+    expect(screen.getByRole('button', { name: 'Next interval' })).toHaveTextContent('Endurance');
+  });
   it('tapping the bar closes a lap (skips the interval)', () => {
-    open(PLAN); warmUp(); fireEvent.click(btn(/^start class$/i)); adv(2);
+    open(PLAN); warmUp(); fireEvent.click(btn(/^start class$/i)); adv(5);
     const n = useRide.getState().lapRows.length;
     fireEvent.click(screen.getByRole('button', { name: 'Next interval' }));
     expect(useRide.getState().lapRows).toHaveLength(n + 1);

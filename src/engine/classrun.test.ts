@@ -73,6 +73,14 @@ describe('ClassRunner', () => {
     expect(r.status).toMatchObject({ index: 1, boundary: true });
   });
 
+  it('exposes windowStartS in ride-elapsed seconds: anchor, boundaries and skips move it', () => {
+    const r = new ClassRunner(plan, 125);
+    expect(r.status.windowStartS).toBe(125);
+    expect(r.tick(425).windowStartS).toBe(425);
+    expect(r.skip(440).windowStartS).toBe(440);
+    expect(r.tick(485).windowStartS).toBe(440);       // the Sprint boundary (125 + 360) passed while skipped: no new window, the skip's start stands
+  });
+
   it('a skip right after a boundary the caller has not ticked yet keeps that lap close', () => {
     const r = new ClassRunner(plan, 0);
     r.tick(299);

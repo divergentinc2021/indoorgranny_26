@@ -2,7 +2,8 @@
 // Boundaries are cumulative plan times (300, 360, 480 for [300, 60, 120]); a skip moves the index but never the boundaries.
 import type { ClassInterval, ClassPlan } from './classplan';
 
-export interface ClassStatus { index: number; interval: ClassInterval | null; remainingS: number; pct: number; boundary: boolean; done: boolean }
+// windowStartS is in ride-elapsed seconds (anchor included), the clock the store compares against.
+export interface ClassStatus { index: number; interval: ClassInterval | null; remainingS: number; pct: number; windowStartS: number; boundary: boolean; done: boolean }
 
 export class ClassRunner {
   private readonly ends: number[];
@@ -40,9 +41,9 @@ export class ClassRunner {
   }
 
   private snap(c: number, boundary: boolean): ClassStatus {
-    if (this.done) return { index: this.ends.length, interval: null, remainingS: 0, pct: 1, boundary, done: true };
+    if (this.done) return { index: this.ends.length, interval: null, remainingS: 0, pct: 1, windowStartS: this.anchorElapsedS + this.winStart, boundary, done: true };
     const end = this.ends[this.index], span = end - this.winStart;
     const pct = span > 0 ? Math.min(1, Math.max(0, (c - this.winStart) / span)) : 1;
-    return { index: this.index, interval: this.plan.intervals[this.index], remainingS: Math.max(0, end - c), pct, boundary, done: false };
+    return { index: this.index, interval: this.plan.intervals[this.index], remainingS: Math.max(0, end - c), pct, windowStartS: this.anchorElapsedS + this.winStart, boundary, done: false };
   }
 }

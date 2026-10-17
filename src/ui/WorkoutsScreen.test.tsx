@@ -62,6 +62,19 @@ describe('WorkoutsScreen', () => {
       fireEvent.click(screen.getByRole('button', { name: /remove/i }));
       expect(useClassPlans.getState().plans).toHaveLength(1);
     });
+    it('tapping the selected plan deselects it, says so, and the auto-pick does not re-select it that day', () => {
+      vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 19, 9, 0, 0));
+      const ps = fixture(); useClassPlans.getState().add(ps); useClassPlans.getState().select(ps[0].id);
+      render(<MemoryRouter><WorkoutsScreen /></MemoryRouter>);
+      const row = () => screen.getByText(ps[0].title).closest('li') as HTMLElement;
+      expect(row()).toHaveClass('bg-gg-strip');
+      fireEvent.click(screen.getByText(ps[0].title));
+      expect(useClassPlans.getState().selectedId).toBeNull();
+      expect(screen.getByRole('status')).toHaveTextContent('No class plan selected — START runs a normal ride');
+      expect(row()).not.toHaveClass('bg-gg-strip');
+      useClassPlans.getState().autoPickToday();
+      expect(useClassPlans.getState().selectedId).toBeNull();
+    });
     it('Import .seconds opens a file input accepting .seconds,.json', () => {
       const { container } = render(<MemoryRouter><WorkoutsScreen /></MemoryRouter>);
       const click = vi.spyOn(seconds(container), 'click');

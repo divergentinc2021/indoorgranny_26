@@ -7,7 +7,7 @@ const mss = (s: number) => { s = Math.max(0, Math.ceil(s)); return `${Math.floor
 export default function ClassBar({ status, onTap, className = '' }: { status: ClassStatus; onTap: () => void; className?: string }) {
   const iv = status.interval;
   const root = `relative overflow-hidden text-black font-bold text-[16px] leading-tight py-1 ${className}`;
-  if (status.done || !iv) return <div role="button" aria-label="Next interval" className={`${root} bg-zone-z1 flex items-center justify-center text-center`}>Class done — free ride</div>;
+  if (status.done || !iv) return <div role="status" className={`${root} bg-zone-z1 flex items-center justify-center text-center`}>Class done — free ride</div>;
   return (
     <div role="button" tabIndex={0} aria-label="Next interval" className={`${root} ${ZONE_BAR[iv.zone]}`} onClick={onTap} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); } }}>
       <div data-testid="class-fill" className={`absolute top-0 left-0 bottom-0 ${ZONE_FILL[iv.zone]}`} style={{ width: `${Math.round(status.pct * 100)}%` }} />

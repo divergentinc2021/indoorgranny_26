@@ -79,16 +79,16 @@ describe('ride store class mode', () => {
     expect(st().lapRows).toHaveLength(2); expect(st().lapRows[1]).toMatchObject({ name: 'Sprint 1:00', durationS: 260 });
   });
 
-  it('a manual lap on the exact boundary second yields one row per interval, no duplicate and none missing', async () => {
+  it('a tap on the exact boundary second closes the boundary lap once and is itself ignored by the guard: no duplicate, none missing', async () => {
     st().begin({ classMode: 'class' });
     await adv(298);                                   // elapsed 299, runner has ticked up to here
     vi.setSystemTime(Date.now() + 1000);              // elapsed rolls to 300 before the next 1 Hz tick
     st().lap();
-    expect(st().lapRows.map((r) => r.name)).toEqual(['Endurance 80+ 5:00', 'Sprint 1:00']);
+    expect(st().lapRows.map((r) => r.name)).toEqual(['Endurance 80+ 5:00']);
     expect(st().lapRows[0].durationS).toBe(300);
-    expect(st().classStatus?.index).toBe(2);
+    expect(st().classStatus?.index).toBe(1);          // the Sprint window just began, so the tap does not skip it
     await adv(1);                                     // the pending tick must not close anything extra
-    expect(st().lapRows).toHaveLength(2);
+    expect(st().lapRows).toHaveLength(1);
     await adv(180);
     expect(st().lapRows.map((r) => r.name)).toEqual(['Endurance 80+ 5:00', 'Sprint 1:00', 'Cool down 2:00']);
     expect(st().classPhase).toBe('done');
@@ -104,6 +104,43 @@ describe('ride store class mode', () => {
     expect(st().lapRows).toHaveLength(0);
     await adv(2);
     expect(st().lapRows).toHaveLength(1); expect(st().lapRows[0].durationS).toBe(300);
+  });
+
+  it('tap guard: a double-click on START CLASS (second lap 0-1 s in) closes no lap and the bar stays on interval 1', async () => {
+    st().begin({ classMode: 'class' });
+    st().lap(); await adv(1); st().lap();
+    expect(st().lapRows).toHaveLength(0); expect(st().classStatus?.index).toBe(0);
+  });
+
+  it('tap guard: a lap 1 s after the 300 s auto-boundary adds no row; one 10 s into an interval skips as before', async () => {
+    st().begin({ classMode: 'class' });
+    await adv(301);
+    expect(st().lapRows).toHaveLength(1);
+    st().lap();
+    expect(st().lapRows).toHaveLength(1); expect(st().classStatus?.index).toBe(1);
+    await adv(9);                                     // 10 s into the Sprint interval
+    st().lap();
+    expect(st().lapRows).toHaveLength(2); expect(st().lapRows[1]).toMatchObject({ name: 'Sprint 1:00' }); expect(st().classStatus?.index).toBe(2);
+  });
+
+  it('tap guard: a tap within 3 s of a previous skip is ignored, and a boundary the tick has not seen is still closed', async () => {
+    st().begin({ classMode: 'class' });
+    await adv(99); st().lap();                        // skip at elapsed 100
+    expect(st().lapRows).toHaveLength(1);
+    await adv(1); st().lap();                         // 1 s after the skip
+    expect(st().lapRows).toHaveLength(1); expect(st().classStatus?.index).toBe(1);
+    await adv(258);                                   // elapsed 359
+    vi.setSystemTime(Date.now() + 1000);              // elapsed rolls to 360 before the next tick
+    st().lap();                                       // runner flushes the boundary; the guard stops the skip but the Sprint lap must still close
+    expect(st().lapRows.map((r) => r.name)).toEqual(['Endurance 80+ 5:00', 'Sprint 1:00']); expect(st().classStatus?.index).toBe(2);
+    await adv(1);
+    expect(st().lapRows).toHaveLength(2);
+  });
+
+  it('stop in warm-up names the final lap Warm up', async () => {
+    st().begin({ classMode: 'warmup' });
+    await adv(60); st().stop();
+    expect(st().lapRows).toHaveLength(1); expect(st().lapRows[0].name).toBe('Warm up');
   });
 
   it('stop during class resets the phase and no further laps appear', async () => {

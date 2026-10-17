@@ -25,6 +25,7 @@ let runner: ClassRunner | null = null;
 let ridePlan: ClassPlan | undefined;
 let doneTimer: ReturnType<typeof setTimeout> | null = null;
 const DONE_HOLD_MS = 5000;
+const TAP_GUARD_S = 3;
 const clearClass = () => { if (doneTimer) clearTimeout(doneTimer); doneTimer = null; runner = null; };
 // Close one lap per plan interval in [from, to): a boundary tick, a skip and a flush all go through here so every interval gets exactly one named row.
 const closeIntervals = (e: RideEngine, from: number, to: number) => { for (let i = from; i < to; i++) e.lap(ridePlan?.intervals[i]?.name); };
@@ -94,7 +95,14 @@ export const useRide = create<S>((set, get) => ({
     const e = get().engine; if (!e || e.state !== 'recording') return;
     if (runner && ridePlan && get().classPhase === 'class') {
       // skip() first flushes a boundary that already passed (index +1) and then skips the current interval (index +1 more); one named row per interval either way.
-      const from = runner.status.index, status = runner.skip(e.view.elapsedS);
+      const from = runner.status.index, el = e.view.elapsedS;
+      // Tap guard: a double-click on START CLASS or a tap right after an auto-boundary must not swallow the interval. tick() first so a boundary the 1 Hz tick has not seen still counts as the window start (and still closes its lap).
+      const seen = runner.tick(el);
+      if (!seen.done && el - seen.windowStartS < TAP_GUARD_S) {
+        if (seen.boundary) { closeIntervals(e, from, seen.index); classAlert(useSettings.getState().classAlerts); set({ lapRows: [...e.laps.rows], view: e.view, classStatus: seen }); }
+        return;
+      }
+      const status = runner.skip(el);
       closeIntervals(e, from, status.index);
       if (status.boundary) classAlert(useSettings.getState().classAlerts);
       set({ lapRows: [...e.laps.rows], view: e.view, classStatus: status, ...(status.done ? { classPhase: 'done' as const } : {}) });
@@ -108,7 +116,7 @@ export const useRide = create<S>((set, get) => ({
     // Stopping during the countdown (engine still idle) means there is nothing to keep: behave as discard.
     if (e.state === 'idle') { get().discard(); return; }
     // Flush a boundary the 1 Hz tick has not seen yet, then name the final partial lap after the interval the rider was in.
-    let lastName: string | undefined;
+    let lastName: string | undefined = get().classPhase === 'warmup' ? 'Warm up' : undefined;
     if (e.state === 'paused') e.resume();   // engine.stop() resumes anyway; doing it first lets the class block below run for a paused stop too
     if (runner && ridePlan && get().classPhase === 'class' && e.state === 'recording') {
       const from = runner.status.index, status = runner.tick(e.view.elapsedS);

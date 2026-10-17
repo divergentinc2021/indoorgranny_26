@@ -45,6 +45,21 @@ describe('useClassPlans', () => {
     useClassPlans.getState().autoPickToday('2026-10-21');
     expect(useClassPlans.getState().selected()?.title).toMatch(/^Session 4/);
   });
+  it('deselect clears the selection and autoPickToday does not bring it back that day', () => {
+    useClassPlans.getState().add(plans());
+    useClassPlans.getState().autoPickToday('2026-10-21');
+    useClassPlans.getState().deselect('2026-10-21');
+    expect(useClassPlans.getState().selectedId).toBeNull(); expect(useClassPlans.getState().autoPickedOn).toBe('2026-10-21');
+    useClassPlans.getState().autoPickToday('2026-10-21');
+    expect(useClassPlans.getState().selectedId).toBeNull();
+  });
+  it('deselect before any auto-pick also burns the day', () => {
+    useClassPlans.getState().add(plans());
+    useClassPlans.getState().select(byTitle('Session 1 ').id);
+    useClassPlans.getState().deselect('2026-10-21');
+    useClassPlans.getState().autoPickToday('2026-10-21');
+    expect(useClassPlans.getState().selectedId).toBeNull();
+  });
   it('autoPickToday does nothing when no plan is dated today', () => {
     useClassPlans.getState().add(plans());
     useClassPlans.getState().autoPickToday('2026-10-23');
