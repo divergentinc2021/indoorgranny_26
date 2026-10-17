@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useSettings } from '../app/settings-store';
 import { useRiders } from '../app/rider-store';
 import TermsDialog from './TermsDialog';
-const TILES: [string, string][] = [['TRAINING', '/training'], ['ACTIVITY LOGS', '/logs'], ['SETTINGS', '/settings'], ['STRUCTURED WORKOUTS', '/workouts'], ['SENSORS', '/sensors']];
+const TILES: [string, string][] = [['TRAINING', '/training'], ['ACTIVITY LOGS', '/logs'], ['SETTINGS', '/settings'], ['CLASS PLANS', '/workouts'], ['SENSORS', '/sensors']];
 export default function Home() {
   const accepted = useSettings((s) => s.licenseAccepted);
   const set = useSettings((s) => s.set);

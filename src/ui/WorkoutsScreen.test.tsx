@@ -2,47 +2,27 @@ import { readFileSync } from 'node:fs';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import WorkoutsScreen from './WorkoutsScreen';
-import { useWorkouts } from '../app/workout-store';
 import { useClassPlans } from '../app/classplan-store';
 import { parseSecondsFile } from '../engine/classplan';
 import { fmtDuration } from '../app/format';
 const raw = readFileSync('src/engine/__fixtures__/timers.seconds', 'utf8');
 const fixture = () => parseSecondsFile(JSON.parse(raw), 'seconds');
-const wk = { id: 'w1', title: 'Sweet spot', type: 'PWR', wdate: '2026-10-14', totalduration: 1200, timeS: [600, 600], pwrS: [88, 94], cadS: [90, 90], hrS: [0, 0] };
 describe('WorkoutsScreen', () => {
   beforeEach(() => {
-    useWorkouts.setState({ workouts: [], selectedId: null });
     useClassPlans.setState({ plans: [], selectedId: null, autoPickedOn: null });
     vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('offline'); }));
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
-  it('lists, selects and removes workouts', async () => {
-    useWorkouts.getState().add(wk);
+  it('is the Class plans screen: no structured-workout section and no JSON import', () => {
     render(<MemoryRouter><WorkoutsScreen /></MemoryRouter>);
-    fireEvent.click(await screen.findByText('Sweet spot'));
-    expect(useWorkouts.getState().selectedId).toBe('w1');
-    expect(await screen.findByRole('status')).toHaveTextContent('Sweet spot selected');
-    fireEvent.click(screen.getByRole('button', { name: /remove/i }));
-    expect(useWorkouts.getState().workouts).toHaveLength(0);
-  });
-  it('imports a valid JSON file and rejects an invalid one', async () => {
-    const { container } = render(<MemoryRouter><WorkoutsScreen /></MemoryRouter>);
-    const input = container.querySelector('input[accept="application/json"]') as HTMLInputElement;
-    const file = (text: string) => ({ text: async () => text }) as unknown as File;
-    fireEvent.change(input, { target: { files: [file(JSON.stringify(wk))] } });
-    expect(await screen.findByText('Workout imported')).toBeInTheDocument();
-    expect(useWorkouts.getState().workouts).toHaveLength(1);
-    fireEvent.change(input, { target: { files: [file('{nope')] } });
-    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Not a valid workout file'));
+    expect(screen.getByRole('heading', { name: 'Class plans', level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Class plans', level: 2 })).toBeInTheDocument();
+    expect(screen.queryByText(/structured workouts/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /import json/i })).toBeNull();
   });
   describe('Class plans', () => {
     const file = (text: string) => ({ text: async () => text }) as unknown as File;
     const seconds = (c: HTMLElement) => c.querySelector('input[accept=".seconds,.json"]') as HTMLInputElement;
-    it('has a Class plans heading above Structured workouts', () => {
-      render(<MemoryRouter><WorkoutsScreen /></MemoryRouter>);
-      const a = screen.getByRole('heading', { name: 'Class plans' }); const b = screen.getByRole('heading', { name: 'Structured workouts', level: 2 });
-      expect(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    });
     it('shows title, duration, interval count and a today badge only for a plan dated today', () => {
       vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 19, 9, 0, 0));
       const ps = fixture(); useClassPlans.getState().add(ps);

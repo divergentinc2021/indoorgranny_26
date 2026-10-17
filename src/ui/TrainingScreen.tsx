@@ -5,7 +5,6 @@ import Tile from './components/Tile';
 import LapTable from './components/LapTable';
 import RollingChart from './components/RollingChart';
 import CountdownModal from './components/CountdownModal';
-import WorkoutPanel from './components/WorkoutPanel';
 import ClassBar from './components/ClassBar';
 import StartDialog from './components/StartDialog';
 import { useWakeLock } from './useWakeLock';
@@ -15,7 +14,6 @@ import { useSettings } from '../app/settings-store';
 import { useSensors } from '../app/sensor-store';
 import { powerZones, hrBand } from '../engine/zones';
 import { fmtClock, fmtDuration, fmtDistance, fmtSpeed } from '../app/format';
-import { useWorkouts } from '../app/workout-store';
 import { useClassPlans } from '../app/classplan-store';
 
 // Vendor button look: flat, no radius. Phone (screenshots): Android grey, black bold uppercase. Tablet: cyan, green START, orange LAP.
@@ -42,7 +40,6 @@ export default function TrainingScreen() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [hist, setHist] = useState(EMPTY_HIST);
   const zones = useMemo(() => powerZones(rider?.ftpW ?? 250, rider?.powerZones), [rider]);
-  const workout = useWorkouts((s) => s.selected());
   const riding = ride.state === 'recording' || ride.state === 'paused';
   // During the countdown classPhase is already set while state is still idle, so class controls also gate on state.
   const classRow = ride.state === 'recording' && ride.classPhase !== 'none';
@@ -65,7 +62,6 @@ export default function TrainingScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [v?.elapsedS]);
   const unit = st.unitSystem;
-  const wide = typeof window !== 'undefined' && window.innerWidth >= 600;
   const cur = ride.engine?.laps.current;
   const hrStrip = HR_STRIP[hrBand(v?.pctHrMax ?? 0)];
   // The dialog stays open on failure so the ride is never lost; Retry runs the same save again.
@@ -103,9 +99,6 @@ export default function TrainingScreen() {
         <RollingChart series={[{ label: 'HR', data: hist.hr, min: 45, max: 220, color: '#e74c3c' }, { label: 'Power', data: hist.power, min: 0, max: 550, color: '#f28c1b' }]} />
         <RollingChart series={[{ label: 'Cadence', data: hist.cad, min: 0, max: 150, color: '#3498db' }, { label: "W'bal kJ", data: hist.wbal, min: 0, max: 50, color: '#2ecc71' }]} height={90} />
       </div>
-      {workout && st.structuredWorkoutEnabled && wide && v && (
-        <div className="mt-3"><WorkoutPanel workout={workout} elapsedS={Math.max(0, v.elapsedS - 1)} ftpW={rider?.ftpW ?? 250} hrMax={rider?.hrMax ?? 180} pctFtp={v.pctFtp} pctHr={v.pctHrMax} /></div>
-      )}
       <div className="flex-1 min-h-0 flex flex-col mt-[10px] tab:mt-3 tab:block tab:flex-none"><LapTable fill rows={ride.lapRows} now={{ number: v?.lapNumber ?? 1, durationS: v?.lapS ?? 0, distanceM: cur?.distanceM ?? 0, avgPower: cur?.avgPower ?? 0, avgHr: cur?.avgHr ?? 0, avgCad: cur?.avgCad ?? 0, avgSpeedMs: v?.speedMs ?? 0 }} zones={zones} unit={unit} showNow={ride.state !== 'stopped'} /></div>
       {/* Phone order PAUSE | STOP | LAP; tablet STOP | PAUSE | LAP. */}
       <div className="flex-shrink-0 bg-gg-bg px-[10px] py-[5px] tab:sticky tab:bottom-0 tab:mt-4 tab:px-0 tab:py-2"><div className={`grid ${classRow ? 'grid-cols-4' : 'grid-cols-3'} gap-2`}>

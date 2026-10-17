@@ -109,7 +109,7 @@ Horizontal, padding 10dp: "Starting in:" (default text colour) + white countdown
 
 **Session detail** (`SessionDetail`): no vendor equivalent file read (the app's detail view is Java/graph-driven); reuse the ride-screen look: navy page, cyan value strips, lap table as above, black-on-cyan lap rows, graphs on black with white axes (graph colours unknown).
 
-**Workouts** (`WorkoutsScreen`, `WorkoutPanel`): black page; cyan header strip "STRUCTURED WORKOUTS" white 20px; rows with 1px white dividers, title bold 20px #00bbff, duration/target/date 20px white in 3 columns; in-ride panel: black bg, yellow #ffff00 20px text.
+**Workouts** (vendor app; retired here 2026-10-17: our `/workouts` is now the Class plans screen, no JSON structured workouts, no in-ride workout panel) (`WorkoutsScreen`, `WorkoutPanel`): black page; cyan header strip "STRUCTURED WORKOUTS" white 20px; rows with 1px white dividers, title bold 20px #00bbff, duration/target/date 20px white in 3 columns; in-ride panel: black bg, yellow #ffff00 20px text.
 
 **Settings** (`SettingsScreen`): platform preference-list look: white page, black titles, grey summary, check boxes / dialogs; keep simple (colours not defined in res). Labels from strings: "Enable automatic log", unit system, Weight, FTP, W', Countdown, Smoothing, MO2 visibility, Club, Structured workouts, App version.
 

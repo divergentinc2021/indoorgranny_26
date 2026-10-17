@@ -93,10 +93,6 @@ export default function SettingsScreen() {
           <span className="flex-1 min-w-0"><span className={TITLE}>Wheel circumference (mm)</span><span className={SUMMARY}>1500–4000 mm</span></span>
           <input id="wheel" type="number" inputMode="numeric" min={1500} max={4000} className={`${CTRL} w-[110px] bg-white text-black`} value={wheelDraft} onChange={(e) => { const v = e.target.value; setWheelDraft(v); if (wheelOk(v)) s.set({ wheelMm: Number(v) }); }} onBlur={() => { if (!wheelOk(wheelDraft)) setWheelDraft(String(s.wheelMm)); }} />
         </label>
-        <label className={ROW}>
-          <span className="flex-1 min-w-0"><span className={TITLE}>Structured workout panel</span><span className={SUMMARY}>show the workout while riding (tablets)</span></span>
-          <input type="checkbox" className="ml-3 flex-shrink-0 w-6 h-6" checked={s.structuredWorkoutEnabled} onChange={(e) => s.set({ structuredWorkoutEnabled: e.target.checked })} />
-        </label>
         <div className={ROW}>
           <div className="flex-1 min-w-0"><span className={TITLE}>App version</span><span className={SUMMARY}>{pkg.version} · recording interval 1 s</span></div>
         </div>

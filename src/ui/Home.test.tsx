@@ -8,7 +8,7 @@ describe('Home', () => {
     render(<MemoryRouter><Home /></MemoryRouter>);
     expect(screen.getByRole('heading', { name: /terms of service and privacy/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /accept/i }));
-    for (const t of ['TRAINING', 'ACTIVITY LOGS', 'SETTINGS', 'STRUCTURED WORKOUTS', 'SENSORS']) expect(screen.getByRole('link', { name: t })).toBeInTheDocument();
+    for (const t of ['TRAINING', 'ACTIVITY LOGS', 'SETTINGS', 'CLASS PLANS', 'SENSORS']) expect(screen.getByRole('link', { name: t })).toBeInTheDocument();
     expect(useSettings.getState().licenseAccepted).toBe(true);
   });
 

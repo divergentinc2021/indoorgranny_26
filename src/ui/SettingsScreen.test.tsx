@@ -12,8 +12,8 @@ describe('SettingsScreen', () => {
     fireEvent.change(screen.getByLabelText(/countdown/i), { target: { value: '5' } });
     fireEvent.change(screen.getByLabelText(/smoothing/i), { target: { value: '10' } });
     fireEvent.change(screen.getByLabelText(/wheel/i), { target: { value: '2096' } });
-    fireEvent.click(screen.getByLabelText(/structured workout/i));
-    expect(useSettings.getState()).toMatchObject({ unitSystem: 'imperial', countdownS: 5, smoothingN: 10, wheelMm: 2096, structuredWorkoutEnabled: true });
+    expect(screen.queryByLabelText(/structured workout/i)).toBeNull();
+    expect(useSettings.getState()).toMatchObject({ unitSystem: 'imperial', countdownS: 5, smoothingN: 10, wheelMm: 2096 });
     expect(screen.getByText(/0\.1\.0/)).toBeInTheDocument();
   });
   it('lets the wheel circumference be typed and edited digit by digit', () => {

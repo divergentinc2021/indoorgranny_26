@@ -10,7 +10,7 @@ import { listSessions } from '../data/sessions';
 describe('settings store', () => {
   it('has vendor defaults and persists device per slot', () => {
     const s = useSettings.getState();
-    expect(s).toMatchObject({ unitSystem: 'metric', countdownS: 0, smoothingN: 1, wheelMm: 1782, structuredWorkoutEnabled: false, licenseAccepted: false });
+    expect(s).toMatchObject({ unitSystem: 'metric', countdownS: 0, smoothingN: 1, wheelMm: 1782, licenseAccepted: false });
     s.setDevice('hr', { slot: 'hr', id: 'x', name: 'Strap' });
     expect(useSettings.getState().devices.hr?.name).toBe('Strap');
     expect(JSON.parse(localStorage.getItem('ig.settings')!).state.devices.hr.id).toBe('x');
