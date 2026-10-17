@@ -35,10 +35,12 @@ export function buildFit(s: SessionRecord, laps: LapRow[], samples: Sample[]): U
   for (const l of laps) {
     put({ mesgNum: Profile.MesgNum.LAP, timestamp: at(l.startOffsetS + l.durationS), startTime: at(l.startOffsetS), totalElapsedTime: l.durationS, totalTimerTime: l.durationS, totalDistance: l.distanceM, avgPower: Math.round(l.avgPower), maxPower: num(l.maxPower), avgHeartRate: l.avgHr > 0 ? Math.round(l.avgHr) : undefined, maxHeartRate: l.maxHr > 0 ? Math.round(l.maxHr) : undefined, avgCadence: Math.round(l.avgCad), totalCalories: Math.round(l.calories), event: 'lap', eventType: 'stop' });
   }
-  const end = at(s.durationS);
+  // The final lap and last record can run a second past durationS (tick rounding); the file must not end before its own data.
+  const endS = Math.max(s.durationS, laps.reduce((m, l) => Math.max(m, l.startOffsetS + l.durationS), 0), samples.length ? samples[samples.length - 1].t : 0);
+  const end = at(endS);
   put({ mesgNum: Profile.MesgNum.EVENT, timestamp: end, event: 'timer', eventType: 'stopAll' });
-  put({ mesgNum: Profile.MesgNum.SESSION, timestamp: end, startTime: start, sport: 'cycling', subSport: 'indoorCycling', totalElapsedTime: s.durationS, totalTimerTime: s.durationS, totalDistance: s.distanceM, totalCalories: Math.round(s.calories), avgPower: Math.round(s.avgPower), maxPower: Math.round(s.maxPower), avgHeartRate: s.avgHr > 0 ? Math.round(s.avgHr) : undefined, maxHeartRate: s.maxHr > 0 ? Math.round(s.maxHr) : undefined, avgCadence: Math.round(s.avgCad), avgSpeed: s.durationS ? s.distanceM / s.durationS : 0, numLaps: Math.max(1, laps.length), firstLapIndex: 0, event: 'session', eventType: 'stop' });
-  put({ mesgNum: Profile.MesgNum.ACTIVITY, timestamp: end, totalTimerTime: s.durationS, numSessions: 1, type: 'manual', event: 'activity', eventType: 'stop' });
+  put({ mesgNum: Profile.MesgNum.SESSION, timestamp: end, startTime: start, sport: 'cycling', subSport: 'indoorCycling', totalElapsedTime: endS, totalTimerTime: endS, totalDistance: s.distanceM, totalCalories: Math.round(s.calories), avgPower: Math.round(s.avgPower), maxPower: Math.round(s.maxPower), avgHeartRate: s.avgHr > 0 ? Math.round(s.avgHr) : undefined, maxHeartRate: s.maxHr > 0 ? Math.round(s.maxHr) : undefined, avgCadence: Math.round(s.avgCad), avgSpeed: s.durationS ? s.distanceM / s.durationS : 0, numLaps: Math.max(1, laps.length), firstLapIndex: 0, event: 'session', eventType: 'stop' });
+  put({ mesgNum: Profile.MesgNum.ACTIVITY, timestamp: end, totalTimerTime: endS, numSessions: 1, type: 'manual', event: 'activity', eventType: 'stop' });
   return enc.close();
 }
 export function fitFileName(s: SessionRecord): string {

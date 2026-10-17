@@ -50,6 +50,19 @@ describe('buildFit', () => {
     expect(messages.lapMesgs).toHaveLength(1);
     expect(messages.sessionMesgs![0]).toHaveProperty('numLaps', 1);
   });
+  it('session end covers the final lap and record, but never ends before durationS', () => {
+    const t0 = session.startMs; const ms = (d: Date | number | string | undefined) => new Date(d as Date).getTime();
+    const lap = { ...laps[0], durationS: 101 }; const late = [...samples, { ...samples[2], t: 101 }];
+    const a = new Decoder(Stream.fromByteArray(buildFit({ ...session, durationS: 100 }, [lap], late))).read();
+    expect(a.errors).toEqual([]);
+    expect(a.messages.sessionMesgs![0]).toMatchObject({ totalElapsedTime: 101, totalTimerTime: 101 });
+    expect(ms(a.messages.sessionMesgs![0].timestamp)).toBe(t0 + 101000);
+    expect(ms(a.messages.activityMesgs![0].timestamp)).toBe(t0 + 101000);
+    expect(a.messages.activityMesgs![0]).toMatchObject({ totalTimerTime: 101 });
+    const b = new Decoder(Stream.fromByteArray(buildFit({ ...session, durationS: 120 }, [{ ...laps[0], durationS: 100 }], samples.map((x) => ({ ...x, t: x.t + 97 }))))).read();
+    expect(b.messages.sessionMesgs![0]).toMatchObject({ totalElapsedTime: 120 });
+    expect(ms(b.messages.sessionMesgs![0].timestamp)).toBe(t0 + 120000);
+  });
   it('zero samples still yields a valid file', () => {
     const { messages, errors } = new Decoder(Stream.fromByteArray(buildFit({ ...session, nSamples: 0 }, [], []))).read();
     expect(errors).toEqual([]); expect(messages.recordMesgs ?? []).toHaveLength(0);
