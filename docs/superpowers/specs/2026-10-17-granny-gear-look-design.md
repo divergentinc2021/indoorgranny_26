@@ -189,3 +189,11 @@ ANTicP's `.seconds` reader only took `packs[0].items[0]` and mapped colours `0�
 - **Zwift Click in the app:** Sensors shows a `Zwift Click` row (device name, battery, the two button meanings) and the ⋮ menu gains "Pair Zwift Click"; Training's bar shows a small Click badge with the current meanings (`+` lap / start class, `−` pause). Behaviour per §16.
 - **Sensor icons animate when connected:** heart beats, bolt flashes, pedal spins, trainer wheel spins, Click pulses; a connecting row pulses a ring around its icon; offline rows dim to 45 %. Reconnect bar's Bluetooth icon pulses while reconnecting.
 - All three apps (indoor cycling, broadcaster, platform) ship as installable PWAs (manifest, icons, service worker; the broadcaster adds TV-friendly focus handling and a wake lock).
+
+## 19. v17 (Laurent, 2026-10-17). Reference `docs/reference/brand/look-v17.html`.
+- **Free ride** Training uses a **yellow → blue gradient** (`linear-gradient(135deg, #FFF200, #29ABE2)`, dark text) on the elapsed strip, chips, LAP and bottom tiles, with a gradient bar underline; a **class** stays solid blue. Same tokens, `gg.gradient` added.
+- Platform Studio block gains **Open broadcast panel**, **Open indoor cycling app** and **Copy app link** (app URL with `?studio=<code>`).
+- **Health check** = six items, each an **OK / Out of order** toggle: Power meter, CycleOps hub, Tablet, Chain, Seat, Handlebar. Any "Out of order" marks the bike `check · <item>` in the list and hides the bike from riders until cleared. Comments field stays.
+- **Rider account** = a single Active toggle switch (green on); off = inactive (cannot sign in, hidden from TV and list, history kept).
+- **Version number** at the bottom of the app (Login tagline line and Home footer, `v<package.json version>`), in addition to Settings.
+- **Login background** lighter: overlay 25 % → 5 % → 45 % (was 40 / 15 / 65).
