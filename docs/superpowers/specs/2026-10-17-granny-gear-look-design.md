@@ -52,13 +52,13 @@ Type: system Roboto stack as today. Wordmark "grannygear" = lowercase, `font-wei
 ## 5. Screens
 
 ### Splash
-New `src/ui/Splash.tsx`, rendered by `App` above the router on the first mount of the app (per page load), full-screen `#29ABE2`, 6 px stripe at the very top (yellow left half, red right half), emblem 150 px centred slightly above middle, wordmark 34 px dark `#111` below it, "INDOOR CYCLING" 13 px letter-spaced white, tagline "improve your performance" 12 px white near the bottom, three dots. Shown for **1200 ms** then fades out over 300 ms (opacity transition, pointer-events none during fade); `role="status" aria-label="Loading"`. Skipped (not rendered) when `?nosplash` is in the URL (tests, Pages previews) and when `prefers-reduced-motion` is set the fade is instant. Does not block store hydration or sensor reconnect (they run underneath).
+New `src/ui/Splash.tsx`, rendered by `App` above the router on the first mount of the app (per page load), full-screen `#29ABE2`, 6 px stripe at the very top (yellow left half, red right half), emblem 150 px centred slightly above middle, wordmark 34 px dark `#111` below it, "INDOOR CYCLING" 13 px letter-spaced white, tagline "Ride in the Granny Gear" 12 px white near the bottom, three dots. Shown for **1200 ms** then fades out over 300 ms (opacity transition, pointer-events none during fade); `role="status" aria-label="Loading"`. Skipped (not rendered) when `?nosplash` is in the URL (tests, Pages previews) and when `prefers-reduced-motion` is set the fade is instant. Does not block store hydration or sensor reconnect (they run underneath).
 
 ### App bar (all screens except Home)
 56 px, `linear-gradient(135deg, #29ABE2, #1E8BBB)`, white text. Left: back chevron (as today) or on Training the 36 px emblem; title 20 px bold; Training keeps rider name + SIGN OUT.
 
 ### Home
-Page `gg.dark`. Top bar as above but with the 36 px emblem + wordmark "grannygear" (no title text). Five tiles in this order: TRAINING, CLASS PLANS, ACTIVITY LOGS, SENSORS, SETTINGS — `gg.panel` cards, 12 px radius, white 18 px bold uppercase labels, 6 px left border in cyan / yellow / red / cyanLight / white respectively, `min-h-[56px]`, `flex-1` as today. Footer band `gg.cyanDark`, "improve your performance". "Review terms" / "Choose rider" links stay in the top bar, white. Terms gate unchanged.
+Page `gg.dark`. Top bar as above but with the 36 px emblem + wordmark "grannygear" (no title text). Five tiles in this order: TRAINING, CLASS PLANS, ACTIVITY LOGS, SENSORS, SETTINGS — `gg.panel` cards, 12 px radius, white 18 px bold uppercase labels, 6 px left border in cyan / yellow / red / cyanLight / white respectively, `min-h-[56px]`, `flex-1` as today. Footer band `gg.cyanDark`, "Ride in the Granny Gear". "Review terms" / "Choose rider" links stay in the top bar, white. Terms gate unchanged.
 
 ### Training — phone (< 600 px), top to bottom
 1. Elapsed strip: `gg.cyan`, white bold 24 px, 8 px radius, 10 px side margins.
@@ -109,3 +109,10 @@ Chrome 81 (see anti-goals; CSS gradients, `border-radius`, `opacity` transitions
 6. **Splash.** Only on a cold launch: rendered when `sessionStorage['ig.splashed']` is unset, then set; never when `useRide` is recording/paused (a service-worker reload mid-ride shows no splash). Terms dialog autofocus happens after the splash unmounts (gate the dialog on splash done). Component test for Splash; `App` not rendered in tests.
 7. **Tablet bar, tones, details.** Tablet header takes the gradient and white text, structure unchanged. `Shell` tones collapse to two: `dark` (default, every screen) and `cyan` (Rider); `white`/`navy`/`black`/`pref` removed. Home keeps an `sr-only` h1 "Granny Gear". Stop/Save dialog: recolour only, no title text added.
 8. **Mock-up vs spec.** Spec wins: no drop-shadow; phone chip 22/12 px; the Review-terms / Choose-rider links stay; `RollingChart` `Series` gains `dash?: boolean`; chips strip the unit from `fmtSpeed` the way `fmtDistance` already does.
+
+## 9. Icons and tagline (Laurent, 2026-10-17, mock-up v3/v4)
+
+- **Tagline** everywhere (splash, Home footer): **"Ride in the Granny Gear"** (replaces "improve your performance").
+- **Home tiles** carry a 44 px rounded (12 px) icon badge left of the label and a `›` chevron at the right; tiles lose the coloured left border. Badge colour / icon: TRAINING `gg.cyan` bike; CLASS PLANS `gg.yellow` calendar (dark icon); ACTIVITY LOGS `gg.red` history clock; SENSORS `gg.cyanLight` bluetooth (dark icon); SETTINGS white sliders (dark icon). Icons are **inline SVG, 24-unit viewBox, stroke 2, round caps/joins, `currentColor`** (Lucide style, authored in-repo under `src/ui/icons.tsx` as tiny components; no icon font, no external file). Keep the labels' existing text so the Home tests' `getByRole('link', {name})` queries still match (icons `aria-hidden`).
+- **Training chips** get a 14 px icon before the caption: Speed gauge (white), Power bolt (`gg.yellow`), HR heart (`gg.red`), Cadence rotate (`gg.cyanLight`); tablet captions too.
+- App bar back chevron and the Sensors ⋮ stay as text glyphs.
