@@ -43,5 +43,6 @@ export function buildFit(s: SessionRecord, laps: LapRow[], samples: Sample[]): U
 }
 export function fitFileName(s: SessionRecord): string {
   const d = new Date(s.startMs); const p = (n: number) => String(n).padStart(2, '0');
-  return `indoorgranny_${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.fit`;
+  const rider = s.riderName.replace(/[^A-Za-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || 'Guest';
+  return `GrannyGear_${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}_${rider}.fit`;
 }

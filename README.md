@@ -46,7 +46,7 @@ Cloudflare Pages, git-connected: push to `main` for production; every other bran
 5. Lap twice; rows appear newest first with zone colour; %dif HR shown on lap 2.
 6. Pause 30 s → Restart: elapsed did not advance during pause.
 7. Stop → "STOP this session?" → Yes → Save.
-8. Activity logs → row shows date, rider, duration, distance, kcal → Actions → Share as FIT → share sheet or download starts (Chrome may not offer sharing for .fit); upload the file manually to Strava → activity appears with power + HR.
+8. Activity logs → row shows date, rider, duration, distance, kcal → Download FIT → file lands in Downloads as GrannyGear_date_time_rider.fit (Android has no viewer: open it from Wahoo / Garmin Connect, or upload at strava.com/upload) → activity appears with power + HR.
 9. Airplane mode → relaunch from the icon → app opens (offline) and history is intact.
 10. Relaunch the app, open Training: sensors reconnect (or Reconnect sensors opens the chooser).
 

@@ -54,7 +54,12 @@ describe('buildFit', () => {
     const { messages, errors } = new Decoder(Stream.fromByteArray(buildFit({ ...session, nSamples: 0 }, [], []))).read();
     expect(errors).toEqual([]); expect(messages.recordMesgs ?? []).toHaveLength(0);
   });
-  it('file name from start time', () => { expect(fitFileName(session)).toMatch(/^indoorgranny_\d{8}_\d{4}\.fit$/); });
+  it('file name is GrannyGear_date_time_Rider', () => {
+    const at = new Date(2026, 9, 14, 18, 5).getTime();
+    expect(fitFileName({ ...session, startMs: at, riderName: 'Mark Carroll' })).toBe('GrannyGear_2026-10-14_1805_Mark-Carroll.fit');
+    expect(fitFileName({ ...session, startMs: at, riderName: '' })).toBe('GrannyGear_2026-10-14_1805_Guest.fit');
+    expect(fitFileName({ ...session, startMs: at, riderName: 'Zoë/Ann' })).toBe('GrannyGear_2026-10-14_1805_Zo-Ann.fit');
+  });
 });
 
 describe('assertKnownFields', () => {
