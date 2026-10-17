@@ -1,5 +1,6 @@
 import { Encoder, Profile } from '@garmin/fitsdk';
 import type { SessionRecord } from './db';
+import { isoDay } from '../engine/classplan';
 import type { LapRow } from '../engine/laps';
 import type { Sample } from '../engine/ride';
 
@@ -28,6 +29,11 @@ export function buildFit(s: SessionRecord, laps: LapRow[], samples: Sample[]): U
   const at = (offsetS: number) => new Date(s.startMs + offsetS * 1000);
   put({ mesgNum: Profile.MesgNum.FILE_ID, type: 'activity', manufacturer: 'development', product: 1, serialNumber: Math.floor(s.startMs / 1000) % 0xffffffff, timeCreated: start });
   put({ mesgNum: Profile.MesgNum.DEVICE_INFO, timestamp: start, deviceIndex: 0, manufacturer: 'development', product: 1, serialNumber: 1 });
+  // Studio tagging: names that identify the app in the FIT consumer. Workout name = the class plan when there is one, else the local ride day.
+  const sportName = 'Granny Gear Indoor Cycling';
+  const wktName = (s.planTitle ? `Granny Gear – ${s.planTitle}` : `Granny Gear Indoor Cycling Session – ${isoDay(start)}`).slice(0, 100);
+  put({ mesgNum: Profile.MesgNum.SPORT, sport: 'cycling', subSport: 'indoorCycling', name: sportName });
+  put({ mesgNum: Profile.MesgNum.WORKOUT, sport: 'cycling', subSport: 'indoorCycling', wktName });
   put({ mesgNum: Profile.MesgNum.EVENT, timestamp: start, event: 'timer', eventType: 'start' });
   for (const x of samples) {
     put({ mesgNum: Profile.MesgNum.RECORD, timestamp: at(x.t), heartRate: x.hr > 0 ? Math.round(x.hr) : undefined, cadence: num(x.cadence, 254), power: num(x.power), speed: x.speedMs, distance: x.distanceM });
@@ -39,12 +45,12 @@ export function buildFit(s: SessionRecord, laps: LapRow[], samples: Sample[]): U
   const endS = Math.max(s.durationS, laps.reduce((m, l) => Math.max(m, l.startOffsetS + l.durationS), 0), samples.length ? samples[samples.length - 1].t : 0);
   const end = at(endS);
   put({ mesgNum: Profile.MesgNum.EVENT, timestamp: end, event: 'timer', eventType: 'stopAll' });
-  put({ mesgNum: Profile.MesgNum.SESSION, timestamp: end, startTime: start, sport: 'cycling', subSport: 'indoorCycling', totalElapsedTime: endS, totalTimerTime: endS, totalDistance: s.distanceM, totalCalories: Math.round(s.calories), avgPower: Math.round(s.avgPower), maxPower: Math.round(s.maxPower), avgHeartRate: s.avgHr > 0 ? Math.round(s.avgHr) : undefined, maxHeartRate: s.maxHr > 0 ? Math.round(s.maxHr) : undefined, avgCadence: Math.round(s.avgCad), avgSpeed: s.durationS ? s.distanceM / s.durationS : 0, numLaps: Math.max(1, laps.length), firstLapIndex: 0, event: 'session', eventType: 'stop' });
+  put({ mesgNum: Profile.MesgNum.SESSION, timestamp: end, startTime: start, sport: 'cycling', subSport: 'indoorCycling', sportProfileName: sportName, totalElapsedTime: endS, totalTimerTime: endS, totalDistance: s.distanceM, totalCalories: Math.round(s.calories), avgPower: Math.round(s.avgPower), maxPower: Math.round(s.maxPower), avgHeartRate: s.avgHr > 0 ? Math.round(s.avgHr) : undefined, maxHeartRate: s.maxHr > 0 ? Math.round(s.maxHr) : undefined, avgCadence: Math.round(s.avgCad), avgSpeed: s.durationS ? s.distanceM / s.durationS : 0, numLaps: Math.max(1, laps.length), firstLapIndex: 0, event: 'session', eventType: 'stop' });
   put({ mesgNum: Profile.MesgNum.ACTIVITY, timestamp: end, totalTimerTime: endS, numSessions: 1, type: 'manual', event: 'activity', eventType: 'stop' });
   return enc.close();
 }
 export function fitFileName(s: SessionRecord): string {
   const d = new Date(s.startMs); const p = (n: number) => String(n).padStart(2, '0');
-  const rider = s.riderName.replace(/[^A-Za-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || 'Guest';
+  const rider = s.riderName.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'Guest';
   return `GrannyGear_${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}_${rider}.fit`;
 }

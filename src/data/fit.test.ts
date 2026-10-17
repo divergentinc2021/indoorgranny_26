@@ -29,6 +29,26 @@ describe('buildFit', () => {
     expect(ms(ses.startTime)).toBe(t0);
     expect(ses).toMatchObject({ totalElapsedTime: 3, totalDistance: 30, avgPower: 200, maxPower: 250, avgHeartRate: 140, maxHeartRate: 150, avgCadence: 90, avgSpeed: 10 });
   });
+  describe('studio tagging', () => {
+    const read = (s: SessionRecord) => { const r = new Decoder(Stream.fromByteArray(buildFit(s, laps, samples))).read(); expect(r.errors).toEqual([]); return r.messages; };
+    it('names the sport, the workout (plan title) and the session profile', () => {
+      const m = read({ ...session, planId: 'p', planTitle: 'Session 1 – 19-20 October 2026' });
+      expect(m.sportMesgs![0]).toMatchObject({ sport: 'cycling', subSport: 'indoorCycling', name: 'Granny Gear Indoor Cycling' });
+      expect(m.workoutMesgs![0]).toMatchObject({ sport: 'cycling', subSport: 'indoorCycling', wktName: 'Granny Gear – Session 1 – 19-20 October 2026' });
+      expect(m.sessionMesgs![0].sportProfileName).toBe('Granny Gear Indoor Cycling');
+    });
+    it('without a plan the workout name carries the local ride day', () => {
+      const day = new Date(2026, 9, 14, 0, 30, 0);   // 00:30 local: a UTC date would be the day before in UTC+2
+      const m = read({ ...session, startMs: day.getTime() });
+      expect(m.workoutMesgs![0].wktName).toBe('Granny Gear Indoor Cycling Session – 2026-10-14');
+    });
+    it('caps the workout name at 100 characters and keeps every name field known to the profile', () => {
+      const m = read({ ...session, planTitle: 'x'.repeat(300) });
+      expect(String(m.workoutMesgs![0].wktName).length).toBeLessThanOrEqual(100);
+      for (const n of [Profile.MesgNum.SPORT, Profile.MesgNum.WORKOUT]) expect(() => assertKnownFields(n, n === Profile.MesgNum.SPORT ? { name: 'a', sport: 'cycling', subSport: 'indoorCycling' } : { wktName: 'a', sport: 'cycling', subSport: 'indoorCycling' })).not.toThrow();
+      expect(() => assertKnownFields(Profile.MesgNum.SESSION, { sportProfileName: 'a' })).not.toThrow();
+    });
+  });
   it('omits heartRate when the strap reads 0', () => {
     const { messages, errors } = new Decoder(Stream.fromByteArray(buildFit(session, laps, [{ ...samples[0], hr: 0 }, samples[1]]))).read();
     expect(errors).toEqual([]);
@@ -71,6 +91,7 @@ describe('buildFit', () => {
     const at = new Date(2026, 9, 14, 18, 5).getTime();
     expect(fitFileName({ ...session, startMs: at, riderName: 'Mark Carroll' })).toBe('GrannyGear_2026-10-14_1805_Mark-Carroll.fit');
     expect(fitFileName({ ...session, startMs: at, riderName: '' })).toBe('GrannyGear_2026-10-14_1805_Guest.fit');
+    expect(fitFileName({ ...session, startMs: at, riderName: 'Ann - Bob' })).toBe('GrannyGear_2026-10-14_1805_Ann-Bob.fit');
     expect(fitFileName({ ...session, startMs: at, riderName: 'Zoë/Ann' })).toBe('GrannyGear_2026-10-14_1805_Zo-Ann.fit');
   });
 });
