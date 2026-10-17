@@ -48,3 +48,12 @@ describe('LapTracker maxima and zero-HR guard', () => {
     expect(r.avgHr).toBe(0); expect(r.difHrPct).toBeNull();
   });
 });
+
+describe('LapTracker names', () => {
+  it('carries an optional name on the closed row', () => {
+    const t = new LapTracker();
+    t.sample(s(100, 120, 80, 5, 5, 1, 10));
+    expect(t.close(10, 'Warm up').name).toBe('Warm up');
+    expect(t.close(20).name).toBeUndefined();
+  });
+});

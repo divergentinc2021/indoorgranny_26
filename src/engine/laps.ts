@@ -1,5 +1,5 @@
 import { Stat } from './metrics';
-export interface LapRow { number: number; startOffsetS: number; durationS: number; distanceM: number; calories: number; avgPower: number; avgCad: number; avgSpeedMs: number; avgHr: number; maxPower: number; maxHr: number; difHrPct: number | null }
+export interface LapRow { number: number; startOffsetS: number; durationS: number; distanceM: number; calories: number; avgPower: number; avgCad: number; avgSpeedMs: number; avgHr: number; maxPower: number; maxHr: number; difHrPct: number | null; name?: string }
 export interface LapSample { power: number; hr: number; cadence: number; speedMs: number; distanceM: number; calories: number; elapsedS: number }
 
 export class LapTracker {
@@ -17,13 +17,14 @@ export class LapTracker {
   get current() {
     return { number: this.n, samples: this.power.n, durationS: this.lastElapsed - this.start, avgPower: this.power.avg, avgHr: this.hr.avg, avgCad: this.cad.avg, distanceM: this.lastDist - this.startDist };
   }
-  close(elapsedS: number): LapRow {
+  close(elapsedS: number, name?: string): LapRow {
     const prev = this.rows[this.rows.length - 1];
     const avgHr = this.hr.avg;
     const row: LapRow = {
       number: this.n, startOffsetS: this.start, durationS: elapsedS - this.start,
       distanceM: this.lastDist - this.startDist, calories: this.lastCal - this.startCal,
       avgPower: this.power.avg, avgCad: this.cad.avg, avgSpeedMs: this.speed.avg, avgHr, maxPower: this.power.max, maxHr: this.hr.max,
+      ...(name ? { name } : {}),
       difHrPct: prev && prev.avgHr > 0 && this.hr.n > 0 && avgHr > 0 ? ((avgHr - prev.avgHr) / prev.avgHr) * 100 : null,
     };
     this.rows.push(row);

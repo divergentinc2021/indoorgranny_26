@@ -119,3 +119,17 @@ describe('SettingsScreen weight units and save errors', () => {
     expect(screen.getByLabelText('Weight (kg)')).toBeInTheDocument();
   });
 });
+
+describe('SettingsScreen class alerts', () => {
+  it('has a Class alerts select that writes classAlerts and shows the chosen label', () => {
+    useSettings.getState().set({ classAlerts: 'both' });
+    render(<MemoryRouter><SettingsScreen /></MemoryRouter>);
+    expect(screen.getByText('Class alerts')).toBeInTheDocument();
+    expect(screen.getAllByText('Vibrate and beep')).toHaveLength(2);   // summary + option
+    const select = screen.getByLabelText(/class alerts/i) as HTMLSelectElement;
+    expect([...select.options].map((o) => o.textContent)).toEqual(['Vibrate and beep', 'Vibrate', 'Beep', 'Off']);
+    fireEvent.change(select, { target: { value: 'beep' } });
+    expect(useSettings.getState().classAlerts).toBe('beep');
+    expect(screen.getAllByText('Beep')).toHaveLength(2); expect(screen.getAllByText('Vibrate and beep')).toHaveLength(1);
+  });
+});

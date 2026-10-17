@@ -3,7 +3,7 @@ import type { LapRow } from '../engine/laps';
 import type { Sample } from '../engine/ride';
 
 export interface Rider { id: string; name: string; email: string; weightKg: number; ftpW: number; cpW?: number; cpExplicit?: boolean; wprimeKj: number; hrMax: number; powerZones?: [string, number][]; createdAt: number }
-export interface SessionRecord { id: number; riderId: string; riderName: string; sport: 'indoor_cycling'; startMs: number; durationS: number; distanceM: number; calories: number; nSamples: number; avgPower: number; maxPower: number; avgHr: number; maxHr: number; avgCad: number; uploaded: null | { service: string; remoteId: string }; synced: boolean }
+export interface SessionRecord { id: number; riderId: string; riderName: string; sport: 'indoor_cycling'; startMs: number; durationS: number; distanceM: number; calories: number; nSamples: number; avgPower: number; maxPower: number; avgHr: number; maxHr: number; avgCad: number; uploaded: null | { service: string; remoteId: string }; synced: boolean; planId?: string; planTitle?: string }
 export interface LapRecord extends LapRow { sessionId: number }
 export interface SampleRecord extends Sample { sessionId: number }
 

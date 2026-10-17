@@ -47,17 +47,17 @@ export class RideEngine {
   start() { if (this.state !== 'idle') return; this.state = 'recording'; this.startMs = this.now(); this.lastTickMs = this.startMs; }
   pause() { if (this.state !== 'recording') return; this.state = 'paused'; this.pauseStartedAt = this.now(); }
   resume() { if (this.state !== 'paused') return; this.pausedMs += this.now() - this.pauseStartedAt; this.state = 'recording'; this.lastTickMs = this.now(); }
-  stop() {
+  stop(lastLapName?: string) {
     if (this.state === 'paused') this.resume();
     if (this.state !== 'recording') return;
     this.stopMs = this.now(); this.state = 'stopped';
     // Close the open lap so the final stretch is not lost from the table and the FIT file (spec §5: final row uses kJ / 4.184).
     if (this.laps.current.samples > 0) {
-      const row = this.laps.close(this.elapsedS());
+      const row = this.laps.close(this.elapsedS(), lastLapName);
       row.calories = kJ(row.avgPower, row.durationS) / 4.184;
     }
   }
-  lap(): LapRow | null { return this.state === 'recording' ? this.laps.close(this.elapsedS()) : null; }
+  lap(name?: string): LapRow | null { return this.state === 'recording' ? this.laps.close(this.elapsedS(), name) : null; }
 
   private elapsedS(): number {
     if (this.state === 'idle') return 0;

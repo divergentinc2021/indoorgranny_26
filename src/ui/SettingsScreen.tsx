@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import Shell from './Shell';
-import { useSettings } from '../app/settings-store';
+import { useSettings, type Settings } from '../app/settings-store';
 import { useRiders } from '../app/rider-store';
 import pkg from '../../package.json';
 
@@ -88,6 +88,7 @@ export default function SettingsScreen() {
         {riderRow('wprimeKj')}
         {sel('countdown', 'Countdown before start', 'Countdown Timer', `delay before start: ${countdown}`, s.countdownS, [[0, 'None'], [5, '5 seconds'], [3600, '1 hour'], [7200, '2 hours'], [10800, '3 hours']], (v) => s.set({ countdownS: Number(v) as 0 | 5 | 3600 | 7200 | 10800 }))}
         {sel('smoothing', 'Power smoothing', 'Smoothing Power', s.smoothingN === 1 ? 'off' : `average over ${s.smoothingN} s`, s.smoothingN, [[1, 'Off'], [5, '5 s'], [10, '10 s'], [30, '30 s']], (v) => s.set({ smoothingN: Number(v) as 1 | 5 | 10 | 30 }))}
+        {sel('classAlerts', 'Class alerts setting', 'Class alerts', ({ both: 'Vibrate and beep', vibrate: 'Vibrate', beep: 'Beep', off: 'Off' } as const)[s.classAlerts], s.classAlerts, [['both', 'Vibrate and beep'], ['vibrate', 'Vibrate'], ['beep', 'Beep'], ['off', 'Off']], (v) => s.set({ classAlerts: v as Settings['classAlerts'] }))}
         <label className={ROW} htmlFor="wheel">
           <span className="flex-1 min-w-0"><span className={TITLE}>Wheel circumference (mm)</span><span className={SUMMARY}>1500–4000 mm</span></span>
           <input id="wheel" type="number" inputMode="numeric" min={1500} max={4000} className={`${CTRL} w-[110px] bg-white text-black`} value={wheelDraft} onChange={(e) => { const v = e.target.value; setWheelDraft(v); if (wheelOk(v)) s.set({ wheelMm: Number(v) }); }} onBlur={() => { if (!wheelOk(wheelDraft)) setWheelDraft(String(s.wheelMm)); }} />
