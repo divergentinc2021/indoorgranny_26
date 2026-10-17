@@ -11,7 +11,7 @@ export default function ClassBar({ status, onTap, className = '' }: { status: Cl
   return (
     <div role="button" tabIndex={0} aria-label="Next interval" className={`${root} ${ZONE_BAR[iv.zone]}`} onClick={onTap} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); } }}>
       <div data-testid="class-fill" className={`absolute top-0 left-0 bottom-0 ${ZONE_FILL[iv.zone]}`} style={{ width: `${Math.round(status.pct * 100)}%` }} />
-      <div className="relative px-1 text-center"><div className="truncate">{iv.displayName}</div><div className="tabular-nums">{mss(status.remainingS)}</div></div>
+      <div className="relative h-full flex flex-col items-center justify-center px-1 text-center"><div className="truncate max-w-full">{iv.displayName}</div><div className="tabular-nums">{mss(status.remainingS)}</div></div>
     </div>
   );
 }

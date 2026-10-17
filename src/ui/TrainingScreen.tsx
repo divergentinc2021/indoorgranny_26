@@ -19,9 +19,13 @@ import { useWorkouts } from '../app/workout-store';
 import { useClassPlans } from '../app/classplan-store';
 
 // Vendor button look: flat, no radius. Phone (screenshots): Android grey, black bold uppercase. Tablet: cyan, green START, orange LAP.
-const BTN = 'py-3 text-[28px] font-bold uppercase tab:text-[38px] tab:font-normal tab:normal-case';
+const BTN_BASE = 'py-3 font-bold uppercase tab:text-[38px] tab:font-normal tab:normal-case';
+const BTN = `${BTN_BASE} text-[28px]`;
 const GREY = `${BTN} bg-gg-btn text-black`;
 const CYAN = `${GREY} tab:bg-gg-strip tab:text-white`;
+// Class-phase row has four columns, so the phone buttons are 20 px. Built WITHOUT the 28 px base: Tailwind emits arbitrary sizes in ascending order, so a trailing text-[20px] would lose to text-[28px].
+const CLASS_CYAN = `${BTN_BASE} text-[20px] bg-gg-btn text-black tab:bg-gg-strip tab:text-white`;
+const CLASS_LAP = `${BTN_BASE} text-[20px] bg-gg-lap text-black`;
 // %HR max value strip by HR band (vendor colours, tokens `hr.z1..z5`). Literal class names so Tailwind keeps them; z1 is the resting cyan.
 const HR_STRIP = { z1: 'bg-hr-z1 text-white', z2: 'bg-hr-z2 text-black', z3: 'bg-hr-z3 text-black', z4: 'bg-hr-z4 text-black', z5: 'bg-hr-z5 text-black' };
 const EMPTY_HIST = { hr: [] as number[], power: [] as number[], cad: [] as number[], wbal: [] as number[] };
@@ -107,7 +111,7 @@ export default function TrainingScreen() {
       <div className="flex-shrink-0 bg-gg-bg px-[10px] py-[5px] tab:sticky tab:bottom-0 tab:mt-4 tab:px-0 tab:py-2"><div className={`grid ${classRow ? 'grid-cols-4' : 'grid-cols-3'} gap-2`}>
         {ride.state === 'idle' && <button className={`col-span-3 ${GREY} tab:bg-gg-on`} onClick={() => (useClassPlans.getState().selected() ? setAskStart(true) : ride.begin())}>Start</button>}
         {ride.state === 'recording' && !classRow && <><button className={`${CYAN} tab:order-2`} onClick={() => ride.pause()}>Pause</button><button className={`${CYAN} tab:order-1`} onClick={() => setConfirmStop(true)}>Stop</button><button className={`${BTN} tab:text-[48px] bg-gg-lap text-black tab:order-3`} onClick={() => ride.lap()}>Lap</button></>}
-        {classRow && <><button className={`col-span-1 ${CYAN} text-[20px] tab:text-[38px] tab:order-2`} onClick={() => ride.pause()}>Pause</button><button className={`col-span-1 ${CYAN} text-[20px] tab:text-[38px] tab:order-1`} onClick={() => setConfirmStop(true)}>Stop</button>{ride.classPhase === 'warmup' ? <button className={`col-span-2 ${BTN} text-[20px] tab:text-[38px] bg-gg-lap text-black tab:order-3`} onClick={() => ride.startClass()}>Start class</button> : ride.classStatus ? <ClassBar className="col-span-2 tab:order-3" status={ride.classStatus} onTap={() => { if (!ride.classStatus?.done) ride.lap(); }} /> : <span className="col-span-2" />}</>}
+        {classRow && <><button className={`col-span-1 ${CLASS_CYAN} tab:order-2`} onClick={() => ride.pause()}>Pause</button><button className={`col-span-1 ${CLASS_CYAN} tab:order-1`} onClick={() => setConfirmStop(true)}>Stop</button>{ride.classPhase === 'warmup' ? <button className={`col-span-2 ${CLASS_LAP} tab:order-3`} onClick={() => ride.startClass()}>Start class</button> : ride.classStatus ? <ClassBar className="col-span-2 tab:order-3" status={ride.classStatus} onTap={() => { if (!ride.classStatus?.done) ride.lap(); }} /> : <span className="col-span-2" />}</>}
         {ride.state === 'paused' && <><button className={`${CYAN} tab:order-2`} onClick={() => ride.resume()}>Restart</button><button className={`${CYAN} tab:order-1`} onClick={() => setConfirmStop(true)}>Stop</button><span className="tab:order-3" /></>}
         {ride.state === 'stopped' && !askSave && <button className={`col-span-3 ${CYAN}`} onClick={() => setAskSave(true)}>Save or discard</button>}
       </div></div>

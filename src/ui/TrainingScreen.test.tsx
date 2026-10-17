@@ -205,6 +205,13 @@ describe('TrainingScreen class mode', () => {
     expect(screen.queryByRole('button', { name: 'Next interval' })).toBeNull();
     expect(btn(/^lap$/i).parentElement).toHaveClass('grid-cols-3');
   });
+  it('class-row phone buttons are 20 px: no 28 px base class (Tailwind emits 20px before 28px, so order cannot win)', () => {
+    open(PLAN); warmUp();
+    for (const b of [btn(/^pause$/i), btn(/^stop$/i), btn(/^start class$/i)]) { expect(b).toHaveClass('text-[20px]', 'tab:text-[38px]'); expect(b).not.toHaveClass('text-[28px]'); }
+    fireEvent.click(btn(/^start class$/i)); adv(1);
+    expect(btn(/^pause$/i)).not.toHaveClass('text-[28px]');
+    expect(screen.getByRole('button', { name: 'Next interval' }).firstElementChild!.nextElementSibling).toHaveClass('flex', 'flex-col', 'items-center', 'justify-center', 'h-full');
+  });
   it('tapping the bar closes a lap (skips the interval)', () => {
     open(PLAN); warmUp(); fireEvent.click(btn(/^start class$/i)); adv(2);
     const n = useRide.getState().lapRows.length;
