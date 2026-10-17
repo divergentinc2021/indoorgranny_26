@@ -58,7 +58,7 @@ New `src/ui/Splash.tsx`, rendered by `App` above the router on the first mount o
 56 px, `linear-gradient(135deg, #29ABE2, #1E8BBB)`, white text. Left: back chevron (as today) or on Training the 36 px emblem; title 20 px bold; Training keeps rider name + SIGN OUT.
 
 ### Home
-Page `gg.dark`. Top bar as above but with the 36 px emblem + wordmark "grannygear" (no title text). Five tiles in this order: TRAINING, CLASS PLANS, ACTIVITY LOGS, SENSORS, SETTINGS — `gg.panel` cards, 12 px radius, white 18 px bold uppercase labels, 6 px left border in cyan / yellow / red / cyanLight / white respectively, `min-h-[56px]`, `flex-1` as today. Footer band `gg.cyanDark`, "Ride in the Granny Gear". "Review terms" / "Choose rider" links stay in the top bar, white. Terms gate unchanged.
+Page `gg.dark`. Top bar as above with the 36 px emblem + the title **"Indoor Cycling"** (20 px bold white; the lowercase wordmark appears only on the splash). Five tiles in this order: TRAINING, CLASS PLANS, ACTIVITY LOGS, SENSORS, SETTINGS — `gg.panel` cards, 12 px radius, white 18 px bold uppercase labels, 6 px left border in cyan / yellow / red / cyanLight / white respectively, `min-h-[56px]`, `flex-1` as today. Footer band `gg.cyanDark`, "Ride in the Granny Gear". "Review terms" / "Choose rider" links stay in the top bar, white. Terms gate unchanged.
 
 ### Training — phone (< 600 px), top to bottom
 1. Elapsed strip: `gg.cyan`, white bold 24 px, 8 px radius, 10 px side margins.
