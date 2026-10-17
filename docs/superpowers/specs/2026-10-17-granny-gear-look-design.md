@@ -158,3 +158,20 @@ Training chip icons animate from the live values and stop while paused/stopped o
 - **Strava linking:** riders must authorise Strava themselves, so the entry points are (a) app Settings → **Strava** row → `Connect` (opens the portal's `/api/strava/connect?rider=<id>` in the browser → Strava OAuth → callback stores tokens → "Connected" shown in the app and portal) and (b) the portal rider drawer shows status (Connected / athlete id / Disconnect) and a "Send link" that mails the same URL. Uploads then happen from the portal on every saved ride. Strava's new-app cap (one athlete until approval) applies.
 - **Portal tabs:** Riders · Class plans · **Gym Settings** (Dashboard and Activities removed; rides stay reachable from each rider). **Class plans tab:** list (title, dates, length, source pill: today / e-mail / upload), Upload .seconds, the e-mail intake line with "last mail seen", drawer editor (title, dates, interval rows editable, zone strip, Save, provenance line). **Gym Settings tab:** bikes list (bike no., power-meter type and id, CycleOps hub id, assigned tablet with battery and last-seen, status pill), studio block (name, join code, broadcaster URL, staff), and a bike drawer reusing the 300 Pro illustration with **highlighted pedals = power meter** (yellow ring) and **highlighted flywheel = CycleOps hub id** (blue ring), power-meter type segmented (none / pedals / crank / CycleOps hub), meter id, hub id, tablet line, **health check** (power meter + battery, tablet battery/charging/Wi-Fi/app version/last seen, hub last seen) and a comments field.
 - **Zwift Click:** support to be specified from the ANTicP implementation (lookup in progress); intended mapping: `+` = LAP / START CLASS, `−` = PAUSE / RESUME.
+
+## 16. Zwift Click support (from the ANTicP implementation, `workout.html` lines 1095–1225, looked up 2026-10-17)
+
+What worked on Laurent's own Click (author's notes, no tests in that repo):
+- `requestDevice` filters `namePrefix: 'Zwift Click'` and `'CLICK'`; `optionalServices` `00000001-19ca-4651-86e5-fa29dcdd09d1` (Zwift), `0000fc82-0000-1000-8000-00805f9b34fb` (newer Zwift service, include it), `0x180F` battery.
+- Characteristics under the Zwift service: `…0002` Measurement (notify, button data), `…0003` Control Point (write), `…0004` Response (notify/indicate).
+- Handshake: subscribe Measurement and Response, then write ASCII `RideOn` to Control Point with **`writeValueWithoutResponse`** (`writeValue` fails — the one real fix in that repo). No key exchange, no protobuf, no reply wait.
+- Notifications: `data[0] === 0x37` with length ≥ 5 → `data[2]` state (0x00 pressed, 0x01 released), `data[4]` button (0x01 = `+`, 0x00 = `−`). Observed: `+` press = `37 08 00 10 01`; `−` only ever reported **release** `37 08 01 10 00`, so `−` is detected on release with a 500 ms gap; `+` debounced 200 ms. `data[0] === 0x19`, length 3 = keepalive, ignore. A `0x23` bitmap message from the SwiftControl notes was never seen on this hardware — parse it as a fallback only (`up = !(bitmap & 1)`, `down = !(bitmap & 2)`).
+- Zwift Play / Ride: not handled; out of scope.
+
+**Our mapping (app `SensorSource`-style adapter `src/sensors/ble/zwift-click.ts`, slot `click`, paired from Sensors like the others):**
+- `+` press → during warm-up `startClass()`, during class or free ride `lap()` (the 3 s tap guard applies), while idle with a plan selected → opens the Start dialog, while the Start dialog is open → START CLASS.
+- `−` release → `pause()` / `resume()` toggle; a long `−` (release after > 1.5 s) while paused → opens the STOP confirmation.
+- Battery level (0x180F) shown on the Sensors row. No resistance control (no trainer control in this app).
+- Settings → Sensors gains a `Zwift Click` slot row (Pair / Forget / battery). Readings never enter `LiveStore` (it is a controller, not a sensor).
+
+ANTicP's `.seconds` reader only took `packs[0].items[0]` and mapped colours `0→Z1, 5→Z2, 4→Z3, 3→Z4, 6→Z5`; our parser (all items, keyword-first mapping) already supersedes it. ANTicP's interval timer advanced intervals without creating laps and had no beep/vibration; ours does both.
