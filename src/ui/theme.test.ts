@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import config from '../../tailwind.config.js';
 
 // Vendor palette (docs/reference/vendor-ui-spec.md). A change here is a visual-parity regression.
-const colors = config.theme.extend.colors as { gg: Record<string, string>; zone: Record<string, string>; hr: Record<string, string> };
+const colors = config.theme.extend.colors as { gg: Record<string, string>; zone: Record<string, string>; zonefill: Record<string, string>; hr: Record<string, string> };
 
 describe('vendor palette tokens', () => {
   it('exposes the vendor UI colours', () => {
@@ -28,6 +28,12 @@ describe('vendor palette tokens', () => {
   it('maps zones 1..7 to the vendor lap-row fills', () => {
     expect([1, 2, 3, 4, 5, 6, 7].map((n) => colors.zone[`z${n}`])).toEqual(
       ['#7adac6', '#0eef2c', '#abebcb', '#ffff00', '#e6e600', '#ffb872', '#ff8787'],
+    );
+  });
+
+  it('maps zones 1..7 to the darker class-bar fill tones', () => {
+    expect([1, 2, 3, 4, 5, 6, 7].map((n) => colors.zonefill[`z${n}`])).toEqual(
+      ['#4f8e81', '#099b1d', '#6f9984', '#a6a600', '#969600', '#a6784a', '#a65858'],
     );
   });
 

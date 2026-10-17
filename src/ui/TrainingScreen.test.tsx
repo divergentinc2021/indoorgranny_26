@@ -6,6 +6,9 @@ import { useRide } from '../app/ride-store';
 import { useSettings } from '../app/settings-store';
 import * as sessionsModule from '../data/sessions';
 import { RideEngine } from '../engine/ride';
+import { useClassPlans } from '../app/classplan-store';
+import { isoDay, type ClassPlan } from '../engine/classplan';
+vi.mock('../app/alerts', () => ({ classAlert: vi.fn(), prepareAudio: vi.fn() }));
 describe('TrainingScreen', () => {
   // jsdom has no canvas: report "no 2D context" quietly so RollingChart skips Chart.js without stderr noise.
   beforeEach(() => { vi.useFakeTimers(); vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null); });
@@ -124,5 +127,109 @@ describe('TrainingScreen', () => {
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: was });
     }
+  });
+});
+describe('TrainingScreen class mode', () => {
+  const iv = (name: string, displayName: string, durationS: number, zone: 1 | 2 | 3 | 4 | 5 | 6 | 7 = 2) => ({ name, displayName, durationS, zone });
+  const PLAN: ClassPlan = { id: 'ui-p1', title: 'Endurance Ride 17 October 2026', dates: [], source: 'seconds', intervals: [iv('Endurance 80+ 5:00', 'Endurance', 300), iv('Sprint 1:00', 'Sprint', 60, 7)], totalS: 360 };
+  const SHORT: ClassPlan = { id: 'ui-p2', title: 'Short', dates: [], source: 'seconds', intervals: [iv('Endurance 0:10', 'Endurance', 10)], totalS: 10 };
+  const adv = (s: number) => act(() => { vi.advanceTimersByTime(s * 1000); });
+  const btn = (n: RegExp | string) => screen.getByRole('button', { name: n });
+  const open = (plan: ClassPlan) => { useClassPlans.setState({ plans: [PLAN, SHORT], selectedId: plan.id, autoPickedOn: null }); render(<MemoryRouter><TrainingScreen /></MemoryRouter>); };
+  const warmUp = () => { fireEvent.click(btn(/^start$/i)); fireEvent.click(btn(/^warm up$/i)); adv(2); };
+  beforeEach(() => { vi.useFakeTimers(); vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null); useSettings.getState().set({ countdownS: 0 }); });
+  afterEach(() => { useRide.getState().discard(); useClassPlans.setState({ plans: [], selectedId: null, autoPickedOn: null }); vi.useRealTimers(); vi.restoreAllMocks(); });
+
+  it('START with a selected plan opens the dialog; Cancel closes it with no ride; START with no plan starts at once', () => {
+    open(PLAN);
+    fireEvent.click(btn(/^start$/i));
+    const dlg = screen.getByRole('dialog');
+    expect(dlg).toHaveAttribute('aria-modal', 'true');
+    expect(screen.getByText(PLAN.title)).toBeInTheDocument();
+    expect(btn(/^warm up$/i)).toBeInTheDocument();
+    expect(btn(/^start class$/i)).toHaveFocus();
+    fireEvent.click(screen.getByText(/^cancel$/i));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(useRide.getState().state).toBe('idle');
+    useClassPlans.setState({ selectedId: null });
+    fireEvent.click(btn(/^start$/i));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    adv(2);
+    expect(useRide.getState().state).toBe('recording');
+  });
+  it('WARM UP records without LAP; START CLASS then shows the interval bar', () => {
+    open(PLAN); warmUp();
+    expect(useRide.getState().state).toBe('recording'); expect(useRide.getState().classPhase).toBe('warmup');
+    expect(btn(/^pause$/i)).toBeInTheDocument(); expect(btn(/^stop$/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^lap$/i })).toBeNull();
+    fireEvent.click(btn(/^start class$/i));
+    expect(useRide.getState().classPhase).toBe('class');
+    expect(screen.queryByRole('button', { name: /^start class$/i })).toBeNull();
+    adv(1);
+    const bar = screen.getByRole('button', { name: 'Next interval' });
+    expect(bar).toHaveTextContent('Endurance'); expect(bar).toHaveTextContent('4:59');
+  });
+  it('the dialog START CLASS begins class mode directly', () => {
+    open(PLAN);
+    fireEvent.click(btn(/^start$/i)); fireEvent.click(btn(/^start class$/i)); adv(2);
+    expect(useRide.getState().classPhase).toBe('class');
+    expect(screen.getByRole('button', { name: 'Next interval' })).toBeInTheDocument();
+  });
+  it('tapping the countdown keeps the chosen class mode', () => {
+    useSettings.getState().set({ countdownS: 5 });
+    open(PLAN);
+    fireEvent.click(btn(/^start$/i)); fireEvent.click(btn(/^start class$/i));
+    expect(useRide.getState().countdownLeft).toBe(5); expect(screen.queryByRole('button', { name: 'Next interval' })).toBeNull();
+    fireEvent.click(screen.getByText(/tap to start now/i));
+    expect(useRide.getState().state).toBe('recording'); expect(useRide.getState().classPhase).toBe('class');
+  });
+  it('bar uses the zone colour and the lighter fill grows with the interval (50% at half time)', () => {
+    open(PLAN); warmUp(); fireEvent.click(btn(/^start class$/i)); adv(150);
+    const bar = screen.getByRole('button', { name: 'Next interval' });
+    expect(bar).toHaveClass('bg-zone-z2', 'overflow-hidden', 'text-black');
+    const fill = screen.getByTestId('class-fill');
+    expect(fill).toHaveClass('bg-zonefill-z2'); expect(fill).toHaveStyle({ width: '50%' });
+  });
+  it('PAUSE/STOP take a quarter each and the bar half; LAP returns 5 s after done', () => {
+    open(SHORT); fireEvent.click(btn(/^start$/i)); fireEvent.click(btn(/^start class$/i)); adv(2);
+    expect(btn(/^pause$/i)).toHaveClass('col-span-1'); expect(btn(/^stop$/i)).toHaveClass('col-span-1');
+    expect(screen.getByRole('button', { name: 'Next interval' })).toHaveClass('col-span-2');
+    expect(btn(/^pause$/i).parentElement).toHaveClass('grid-cols-4');
+    adv(9);
+    const done = screen.getByRole('button', { name: 'Next interval' });
+    expect(done).toHaveTextContent('Class done — free ride'); expect(done).toHaveClass('bg-zone-z1');
+    expect(screen.queryByTestId('class-fill')).toBeNull();
+    const laps = useRide.getState().lapRows.length;
+    fireEvent.click(done); expect(useRide.getState().lapRows).toHaveLength(laps);
+    adv(5);
+    expect(screen.queryByRole('button', { name: 'Next interval' })).toBeNull();
+    expect(btn(/^lap$/i).parentElement).toHaveClass('grid-cols-3');
+  });
+  it('tapping the bar closes a lap (skips the interval)', () => {
+    open(PLAN); warmUp(); fireEvent.click(btn(/^start class$/i)); adv(2);
+    const n = useRide.getState().lapRows.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Next interval' }));
+    expect(useRide.getState().lapRows).toHaveLength(n + 1);
+    expect(screen.getByRole('button', { name: 'Next interval' })).toHaveTextContent('Sprint');
+  });
+  it('STOP during class confirms, drops the bar and shows Save or discard', () => {
+    open(PLAN); warmUp(); fireEvent.click(btn(/^start class$/i)); adv(2);
+    fireEvent.click(btn(/^stop$/i)); expect(screen.getByText(/STOP this session\?/)).toBeInTheDocument();
+    fireEvent.click(btn(/yes, stop/i));
+    expect(screen.queryByRole('button', { name: 'Next interval' })).toBeNull();
+    expect(screen.getByText(/save it\?/i)).toBeInTheDocument(); expect(useRide.getState().state).toBe('stopped');
+    fireEvent.click(btn(/discard/i));
+  });
+  it('paused during warm up: no START CLASS button', () => {
+    open(PLAN); warmUp(); fireEvent.click(btn(/^pause$/i));
+    expect(useRide.getState().state).toBe('paused');
+    expect(screen.queryByRole('button', { name: /^start class$/i })).toBeNull();
+    expect(btn(/^restart$/i)).toBeInTheDocument();
+  });
+  it('on mount picks the plan dated today when none is selected', () => {
+    const today = isoDay(new Date());
+    useClassPlans.setState({ plans: [{ ...PLAN, id: 'ui-today', dates: [today] }], selectedId: null, autoPickedOn: null });
+    render(<MemoryRouter><TrainingScreen /></MemoryRouter>);
+    expect(useClassPlans.getState().selectedId).toBe('ui-today');
   });
 });

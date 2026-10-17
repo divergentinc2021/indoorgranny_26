@@ -9,9 +9,16 @@ describe('LapTable', () => {
   it('renders the vendor columns newest first with zone colouring and a NOW row', () => {
     render(<LapTable rows={rows} now={{ number: 3, durationS: 5, distanceM: 20, avgPower: 100, avgHr: 120, avgCad: 80, avgSpeedMs: 7 }} zones={powerZones(250)} unit="metric" />);
     const headers = screen.getAllByRole('columnheader').map((h) => h.textContent);
-    expect(headers).toEqual(['Lap', 'Time', 'Avg Speed', 'Distance', 'Avg Power', 'Avg HR', '%dif HR', 'Avg CAD']);
+    expect(headers).toEqual(['Lap', 'Name', 'Time', 'Avg Speed', 'Distance', 'Avg Power', 'Avg HR', '%dif HR', 'Avg CAD']);
     const cells = screen.getAllByRole('row').map((r) => r.textContent);
     expect(cells[1]).toContain('now'); expect(cells[2]).toContain('2'); expect(cells[2]).toContain('+10.0%');
     expect(screen.getAllByRole('row')[2].className).toContain('z4'); // 260 W at FTP 250 -> zone index 3 -> z4
+  });
+  it('shows the interval name in a tablet-only column right after Lap', () => {
+    render(<LapTable rows={[{ ...rows[0], name: 'Sprint' }]} now={{ number: 2, durationS: 5, distanceM: 20, avgPower: 100, avgHr: 120, avgCad: 80, avgSpeedMs: 7 }} zones={powerZones(250)} unit="metric" />);
+    const th = screen.getAllByRole('columnheader')[1];
+    expect(th).toHaveTextContent('Name'); expect(th).toHaveClass('hidden', 'tab:table-cell');
+    const td = screen.getAllByRole('row')[2].querySelectorAll('td')[1];
+    expect(td).toHaveTextContent('Sprint'); expect(td).toHaveClass('hidden', 'tab:table-cell');
   });
 });

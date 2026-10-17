@@ -6,6 +6,8 @@ import LapTable from './components/LapTable';
 import RollingChart from './components/RollingChart';
 import CountdownModal from './components/CountdownModal';
 import WorkoutPanel from './components/WorkoutPanel';
+import ClassBar from './components/ClassBar';
+import StartDialog from './components/StartDialog';
 import { useWakeLock } from './useWakeLock';
 import { useRide } from '../app/ride-store';
 import { useRiders } from '../app/rider-store';
@@ -14,6 +16,7 @@ import { useSensors } from '../app/sensor-store';
 import { powerZones, hrBand } from '../engine/zones';
 import { fmtClock, fmtDuration, fmtDistance, fmtSpeed } from '../app/format';
 import { useWorkouts } from '../app/workout-store';
+import { useClassPlans } from '../app/classplan-store';
 
 // Vendor button look: flat, no radius. Phone (screenshots): Android grey, black bold uppercase. Tablet: cyan, green START, orange LAP.
 const BTN = 'py-3 text-[28px] font-bold uppercase tab:text-[38px] tab:font-normal tab:normal-case';
@@ -31,12 +34,17 @@ export default function TrainingScreen() {
   const reconnectAll = useSensors((s) => s.reconnectAll);
   const [confirmStop, setConfirmStop] = useState(false);
   const [askSave, setAskSave] = useState(false);
+  const [askStart, setAskStart] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [hist, setHist] = useState(EMPTY_HIST);
   const zones = useMemo(() => powerZones(rider?.ftpW ?? 250, rider?.powerZones), [rider]);
   const workout = useWorkouts((s) => s.selected());
   const riding = ride.state === 'recording' || ride.state === 'paused';
+  // During the countdown classPhase is already set while state is still idle, so class controls also gate on state.
+  const classRow = ride.state === 'recording' && ride.classPhase !== 'none';
+  const planTitle = useClassPlans((s) => s.selected()?.title ?? null);
   useWakeLock(riding);
+  useEffect(() => { useClassPlans.getState().autoPickToday(); void useClassPlans.getState().loadBundled().then(() => useClassPlans.getState().autoPickToday()); }, []);
   useEffect(() => { void reconnectAll(); }, [reconnectAll]);
   // Leaving during the countdown must cancel it, or a ghost ride would start (and record) with the screen gone.
   useEffect(() => () => { const s = useRide.getState(); if (s.countdownLeft !== null) s.discard(); }, []);
@@ -64,7 +72,8 @@ export default function TrainingScreen() {
 
   return (
     <Shell title="Training" back={!riding} tone="navy" fill bar={<PhoneBar name={rider?.name ?? 'Guest'} signOut={!riding} />}>
-      {ride.countdownLeft !== null && <CountdownModal left={ride.countdownLeft} onSkip={() => { ride.discard(); ride.begin({ skipCountdown: true }); }} />}
+      {ride.countdownLeft !== null && <CountdownModal left={ride.countdownLeft} onSkip={() => { const m = ride.classPhase; ride.discard(); ride.begin({ skipCountdown: true, ...(m === 'warmup' || m === 'class' ? { classMode: m } : {}) }); }} />}
+      {askStart && planTitle && <StartDialog title={planTitle} onWarmUp={() => { setAskStart(false); ride.begin({ classMode: 'warmup' }); }} onStartClass={() => { setAskStart(false); ride.begin({ classMode: 'class' }); }} onCancel={() => setAskStart(false)} />}
       {confirmStop && <Dialog text="STOP this session?" yes="Yes, stop" onYes={() => { setConfirmStop(false); ride.stop(); setAskSave(true); }} onNo={() => setConfirmStop(false)} />}
       {askSave && <Dialog text="Do you want to save it?" yes={saveError ? 'Retry' : 'Save'} no="Discard" error={saveError} onYes={() => void doSave()} onNo={() => { setAskSave(false); setSaveError(null); ride.discard(); setHist(EMPTY_HIST); }} />}
       {ride.storageError && <div role="alert" className="bg-white text-red-700 font-bold text-[16px] px-2 py-1">{ride.storageError}</div>}
@@ -95,9 +104,10 @@ export default function TrainingScreen() {
       )}
       <div className="flex-1 min-h-0 flex flex-col mt-[10px] tab:mt-3 tab:block tab:flex-none"><LapTable fill rows={ride.lapRows} now={{ number: v?.lapNumber ?? 1, durationS: v?.lapS ?? 0, distanceM: cur?.distanceM ?? 0, avgPower: cur?.avgPower ?? 0, avgHr: cur?.avgHr ?? 0, avgCad: cur?.avgCad ?? 0, avgSpeedMs: v?.speedMs ?? 0 }} zones={zones} unit={unit} showNow={ride.state !== 'stopped'} /></div>
       {/* Phone order PAUSE | STOP | LAP; tablet STOP | PAUSE | LAP. */}
-      <div className="flex-shrink-0 bg-gg-bg px-[10px] py-[5px] tab:sticky tab:bottom-0 tab:mt-4 tab:px-0 tab:py-2"><div className="grid grid-cols-3 gap-2">
-        {ride.state === 'idle' && <button className={`col-span-3 ${GREY} tab:bg-gg-on`} onClick={() => ride.begin()}>Start</button>}
-        {ride.state === 'recording' && <><button className={`${CYAN} tab:order-2`} onClick={() => ride.pause()}>Pause</button><button className={`${CYAN} tab:order-1`} onClick={() => setConfirmStop(true)}>Stop</button><button className={`${BTN} tab:text-[48px] bg-gg-lap text-black tab:order-3`} onClick={() => ride.lap()}>Lap</button></>}
+      <div className="flex-shrink-0 bg-gg-bg px-[10px] py-[5px] tab:sticky tab:bottom-0 tab:mt-4 tab:px-0 tab:py-2"><div className={`grid ${classRow ? 'grid-cols-4' : 'grid-cols-3'} gap-2`}>
+        {ride.state === 'idle' && <button className={`col-span-3 ${GREY} tab:bg-gg-on`} onClick={() => (useClassPlans.getState().selected() ? setAskStart(true) : ride.begin())}>Start</button>}
+        {ride.state === 'recording' && !classRow && <><button className={`${CYAN} tab:order-2`} onClick={() => ride.pause()}>Pause</button><button className={`${CYAN} tab:order-1`} onClick={() => setConfirmStop(true)}>Stop</button><button className={`${BTN} tab:text-[48px] bg-gg-lap text-black tab:order-3`} onClick={() => ride.lap()}>Lap</button></>}
+        {classRow && <><button className={`col-span-1 ${CYAN} text-[20px] tab:text-[38px] tab:order-2`} onClick={() => ride.pause()}>Pause</button><button className={`col-span-1 ${CYAN} text-[20px] tab:text-[38px] tab:order-1`} onClick={() => setConfirmStop(true)}>Stop</button>{ride.classPhase === 'warmup' ? <button className={`col-span-2 ${BTN} text-[20px] tab:text-[38px] bg-gg-lap text-black tab:order-3`} onClick={() => ride.startClass()}>Start class</button> : ride.classStatus ? <ClassBar className="col-span-2 tab:order-3" status={ride.classStatus} onTap={() => { if (!ride.classStatus?.done) ride.lap(); }} /> : <span className="col-span-2" />}</>}
         {ride.state === 'paused' && <><button className={`${CYAN} tab:order-2`} onClick={() => ride.resume()}>Restart</button><button className={`${CYAN} tab:order-1`} onClick={() => setConfirmStop(true)}>Stop</button><span className="tab:order-3" /></>}
         {ride.state === 'stopped' && !askSave && <button className={`col-span-3 ${CYAN}`} onClick={() => setAskSave(true)}>Save or discard</button>}
       </div></div>

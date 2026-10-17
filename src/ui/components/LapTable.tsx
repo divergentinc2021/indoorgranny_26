@@ -12,7 +12,7 @@ export default function LapTable({ rows, now, zones, unit, showNow = true, fill 
   const X = 'hidden tab:table-cell';
   const cell = (r: Now | LapRow, lap: string, dif: string, lapCls = '') => (
     <>
-      <td className={`px-1 ${lapCls}`}>{lap}</td><td className="px-1 tabular-nums whitespace-nowrap">{fmtClock(r.durationS)}</td><td className={`px-1 ${X}`}>{fmtSpeed(r.avgSpeedMs, unit)}</td><td className={`px-1 ${X}`}>{fmtDistance(r.distanceM, unit)}</td>
+      <td className={`px-1 ${lapCls}`}>{lap}</td><td className={`px-1 ${X}`}>{'name' in r ? r.name ?? '' : ''}</td><td className="px-1 tabular-nums whitespace-nowrap">{fmtClock(r.durationS)}</td><td className={`px-1 ${X}`}>{fmtSpeed(r.avgSpeedMs, unit)}</td><td className={`px-1 ${X}`}>{fmtDistance(r.distanceM, unit)}</td>
       <td className="px-1">{Math.round(r.avgPower)}</td><td className="px-1">{Math.round(r.avgHr)}</td><td className={`px-1 ${X}`}>{dif}</td><td className="px-1">{Math.round(r.avgCad)}</td>
     </>
   );
@@ -21,7 +21,7 @@ export default function LapTable({ rows, now, zones, unit, showNow = true, fill 
   const th = fill ? 'sticky top-0 bg-white font-bold tab:static tab:font-normal' : 'font-normal';
   return (
     <div className={root}><table className={table}>
-      <thead><tr className="bg-white">{['Lap', 'Time', 'Avg Speed', 'Distance', 'Avg Power', 'Avg HR', '%dif HR', 'Avg CAD'].map((h) => <th key={h} className={`px-1 py-1 ${th} ${['Avg Speed', 'Distance', '%dif HR'].includes(h) ? X : ''}`}>{h}</th>)}</tr></thead>
+      <thead><tr className="bg-white">{['Lap', 'Name', 'Time', 'Avg Speed', 'Distance', 'Avg Power', 'Avg HR', '%dif HR', 'Avg CAD'].map((h) => <th key={h} className={`px-1 py-1 ${th} ${['Name', 'Avg Speed', 'Distance', '%dif HR'].includes(h) ? X : ''}`}>{h}</th>)}</tr></thead>
       <tbody className="font-bold">
         {showNow && <tr className="tab:bg-gg-zonebg">{cell(now, 'now', '', 'tab:uppercase')}</tr>}
         {[...rows].reverse().map((r) => <tr key={r.number} className={cls(r.avgPower)}>{cell(r, String(r.number), r.difHrPct === null ? '' : `${r.difHrPct >= 0 ? '+' : ''}${r.difHrPct.toFixed(1)}%`)}</tr>)}

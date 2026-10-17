@@ -29,6 +29,8 @@ export default {
         hr: { z1: '#00bbff', z2: '#0eef2c', z3: '#e6e600', z4: '#ffb872', z5: '#ff8787' },
         // Lap-row fills for zones 1..7: emerald, green, light green, yellow, dark yellow, orange, red (salmon).
         zone: { z1: '#7adac6', z2: '#0eef2c', z3: '#abebcb', z4: '#ffff00', z5: '#e6e600', z6: '#ffb872', z7: '#ff8787' },
+        // Class progress-bar fill: a darker tone of each zone fill, drawn over the bar as the interval elapses.
+        zonefill: { z1: '#4f8e81', z2: '#099b1d', z3: '#6f9984', z4: '#a6a600', z5: '#969600', z6: '#a6784a', z7: '#a65858' },
       },
     },
   },
