@@ -1,0 +1,31 @@
+{
+  "prompt": "Moody indoor cycling studio at night: a row of CycleOps 300 Pro spin bikes, matte black steel frames, heavy black front flywheel inside a dark cowl, exposed chain drive, black saddles, small yellow decals on the down tubes (out of focus, unreadable), bikes receding into darkness on a dark grey studded rubber floor beside a strip of pale wood flooring, mirror wall glimpsed on the left, warm yellow rim light from the right, faint cyan spill from the left, shallow depth of field, cinematic, empty room, no people, no legible text, no logos, portrait composition with empty dark space in the upper third",
+  "revised_prompt": null,
+  "endpoint": "generations",
+  "params": {
+    "model": "gpt-image-2",
+    "prompt": "Moody indoor cycling studio at night: a row of CycleOps 300 Pro spin bikes, matte black steel frames, heavy black front flywheel inside a dark cowl, exposed chain drive, black saddles, small yellow decals on the down tubes (out of focus, unreadable), bikes receding into darkness on a dark grey studded rubber floor beside a strip of pale wood flooring, mirror wall glimpsed on the left, warm yellow rim light from the right, faint cyan spill from the left, shallow depth of field, cinematic, empty room, no people, no legible text, no logos, portrait composition with empty dark space in the upper third",
+    "n": 1,
+    "size": "1024x1536",
+    "quality": "medium",
+    "output_format": "jpeg",
+    "output_compression": 72
+  },
+  "inputs": [],
+  "mask": null,
+  "usage": {
+    "input_tokens": 139,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 139
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1511
+  },
+  "created": 1792241790,
+  "seconds": 26.5
+}
