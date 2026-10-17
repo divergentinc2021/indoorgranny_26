@@ -1,0 +1,111 @@
+# Granny Gear look and Training layout v2 — design
+
+Date: 2026-10-17. Branch: continues `phase1-pwa-parity`. Supersedes the visual half of the phase-1 "parity port" rule: behaviour, formulas, tiles and lap maths stay vendor-identical; the look becomes Granny Gear's. Approved direction: the mock-up at `docs/reference/brand/splash-mockup.html` (v2), which Laurent accepted on 2026-10-17 with four changes that are folded in below.
+
+## 1. Intent
+
+Riders and the owner should recognise the studio, not the old vendor app. The Granny Gear Workshop App (GGWA) already carries the brand (GG emblem, cyan / yellow / red on dark), and the 2023 Unity app's splash set the composition (brand-blue field, emblem centred, lots of air). The phone Training screen also gains the controls Laurent asked for: a Speed chip, the lap table trimmed to what matters mid-ride, the buttons where the thumb is, and the charts back on the phone.
+
+## 2. Goals / non-goals / anti-goals
+
+**Goals**
+- Splash on launch with the GG emblem; GG palette on every screen; emblem as the PWA icon and in the app bar.
+- Training (phone) v2 layout: elapsed → Speed | Power | HR | Cadence chips → lap table (now + last 3) → PAUSE / STOP / LAP (or the class bar) → two charts → Distance | Wbal | %HR max | KJ.
+- Tablet gets the same palette; its layout keeps all laps and all tiles.
+
+**Non-goals**
+- No change to any number, formula, zone boundary, lap rule, FIT content or class-mode behaviour.
+- No new screens. No animation beyond the splash fade.
+
+**Anti-goals**
+- Lap-row zone colours and the %HR max band colours must NOT change (riders and the instructor read them).
+- Nothing that breaks Chrome 81 (Tab 3 fleet): no flex `gap`, `aspect-ratio`, `inset-*`, `:has()`, no `backdrop-filter`, no `color-mix()`.
+- No web fonts; no font downloads.
+
+## 3. Palette and tokens (Tailwind `gg.*`, replacing the vendor values)
+
+| Token | Hex | Use |
+|---|---|---|
+| `gg.cyan` | `#29ABE2` | strips, chips, selected rows, primary buttons, splash field |
+| `gg.cyanDark` | `#1E8BBB` | app-bar gradient end, footer, `theme_color` |
+| `gg.cyanLight` | `#5BC4ED` | secondary lines, W'bal chart |
+| `gg.yellow` | `#FFF200` | LAP button, Power chart line, tile accent |
+| `gg.red` | `#ED1C24` | STOP button, Delete, HR chart line |
+| `gg.dark` | `#1A1A1A` | page background everywhere (replaces navy `#093c64` and pref `#212121`) |
+| `gg.panel` | `#262626` | cards, chart panels, Home tiles |
+| `gg.btn` | `#3A3A3A` | neutral buttons (PAUSE, Restart, dialog secondary) |
+| `gg.light` | `#F8F9FA` | light surfaces (lap table body, dialogs' text areas) |
+
+Kept unchanged: `zone.z1..z7`, `zonefill.z1..z7`, `hr.z1..z5` (`hr.z1` cyan becomes `#29ABE2` so the resting strip matches the new cyan; the other four stay). `gg.bar #1f1f1f` is retired in favour of the gradient bar. The old `gg.bg`, `gg.strip`, `gg.on`, `gg.lap`, `gg.pref`, `gg.summary`, `gg.dlg`, `gg.zonebg` are removed or remapped; `theme.test.ts` asserts the new table and the unchanged zone/HR tokens.
+
+Radius: 8 px on strips, chips, buttons, panels (`rounded-[8px]`); 12 px on Home tiles. Shadows: none (flat on dark).
+
+Type: system Roboto stack as today. Wordmark "grannygear" = lowercase, `font-weight: 900; font-style: italic; letter-spacing: -1px` (renders Arial Black on Windows/Mac, Roboto Black on Android; accepted). No PNG wordmark in the UI.
+
+## 4. Assets
+
+- `public/icons/icon-192.png`, `icon-512.png`, new `icon-maskable-512.png` (emblem on a `#29ABE2` square with safe-zone padding), `apple-touch-icon.png` (180), `favicon-32.png`, `favicon-16.png`: all generated from `docs/reference/brand/gg-emblem-512.png` with the existing node/sharp-free approach (plain copy + canvas resize script or pre-resized files committed; builder's choice, but the files are committed, not generated at build).
+- `public/img/bike.png` (Logs row icon) stays.
+- Manifest: `name` "Granny Gear Indoor Cycling", `short_name` "Granny Gear", `theme_color #1E8BBB`, `background_color #29ABE2`, icons above incl. `purpose: 'maskable'` for the maskable one.
+- `index.html`: `<meta name="theme-color" content="#1E8BBB">`, apple-touch link, favicon links.
+
+## 5. Screens
+
+### Splash
+New `src/ui/Splash.tsx`, rendered by `App` above the router on the first mount of the app (per page load), full-screen `#29ABE2`, 6 px stripe at the very top (yellow left half, red right half), emblem 150 px centred slightly above middle, wordmark 34 px dark `#111` below it, "INDOOR CYCLING" 13 px letter-spaced white, tagline "improve your performance" 12 px white near the bottom, three dots. Shown for **1200 ms** then fades out over 300 ms (opacity transition, pointer-events none during fade); `role="status" aria-label="Loading"`. Skipped (not rendered) when `?nosplash` is in the URL (tests, Pages previews) and when `prefers-reduced-motion` is set the fade is instant. Does not block store hydration or sensor reconnect (they run underneath).
+
+### App bar (all screens except Home)
+56 px, `linear-gradient(135deg, #29ABE2, #1E8BBB)`, white text. Left: back chevron (as today) or on Training the 36 px emblem; title 20 px bold; Training keeps rider name + SIGN OUT.
+
+### Home
+Page `gg.dark`. Top bar as above but with the 36 px emblem + wordmark "grannygear" (no title text). Five tiles in this order: TRAINING, CLASS PLANS, ACTIVITY LOGS, SENSORS, SETTINGS — `gg.panel` cards, 12 px radius, white 18 px bold uppercase labels, 6 px left border in cyan / yellow / red / cyanLight / white respectively, `min-h-[56px]`, `flex-1` as today. Footer band `gg.cyanDark`, "improve your performance". "Review terms" / "Choose rider" links stay in the top bar, white. Terms gate unchanged.
+
+### Training — phone (< 600 px), top to bottom
+1. Elapsed strip: `gg.cyan`, white bold 24 px, 8 px radius, 10 px side margins.
+2. Chips row (4): captions white bold 12 px: **Speed**, Power, HR, Cadence; values white bold 22 px on `gg.cyan`, 8 px radius. Speed shows `fmtSpeed` without unit text (km/h or mph per setting); when `speedSource === 'virtual'` the caption reads "Speed (est.)".
+3. Lap table: white body, black text, header row as today (Lap | Time | Avg Power | Avg HR | Avg CAD), rows = **now + the last 3 closed laps** (newest first), zone fills unchanged, `rounded-[8px]`, no scrolling, `flex-none`. Older laps remain in the engine, Logs and the FIT; tablet keeps the full list.
+4. Button row: `PAUSE` (`gg.btn`), `STOP` (`gg.red`, white), `LAP` (`gg.yellow`, dark text) — during class the row becomes PAUSE ¼ | STOP ¼ | class bar ½ exactly as now (bar colours unchanged); warm-up shows START CLASS in `gg.yellow`.
+5. Charts (two `gg.panel` cards, 8 px radius, 6 px apart): HR (`#ED1C24`) + Power (`#FFF200`) at 60 px; Cadence (`#29ABE2`) + W'bal kJ (`#5BC4ED`, dashed) at 46 px; tiny legend labels top-left; `RollingChart` reused with these colours/heights; the phone no longer hides them (`hidden tab:block` removed).
+6. Bottom row: Distance (km) | Wbal (%exp) | %HR max | KJ — compact tiles as today, `gg.cyan` strips, %HR strip keeps the HR band tint.
+The screen may scroll if the viewport is shorter than the stack (Nothing Phone (1) at 412×915 fits without scrolling with these heights; tested in the preview).
+
+### Training — tablet (≥ 600 px)
+Same palette; layout as today (all laps, all tiles, charts), buttons recoloured, chips row gains Speed before Power as well.
+
+### Settings
+Page `gg.dark`; category header `gg.cyan` bold; item titles white, summaries `#9e9e9e`; controls dark `gg.panel` with a 1 px `#555` border; dividers `#333`. Content unchanged.
+
+### Sensors
+Page `gg.dark`; slot cards `gg.panel`; Pair = `gg.cyan`, Forget = text red; "Reconnect sensors" bar `gg.cyan`; status dot green/grey/red unchanged. ⋮ menu `gg.panel`.
+
+### Logs / Session detail
+Page `gg.dark`; ride rows `gg.panel` with white text (date, rider, duration, distance, kcal); Download FIT `gg.cyan`; Delete red text; Delete-all red. Session detail charts use the GG line colours.
+
+### Rider (sign-in) screen
+Page `gg.cyan`; emblem 48 px top-left + "WELCOME TO GRANNY GEAR"; list and form panels `gg.light` with dark text; Go/Add buttons `gg.dark` with white text.
+
+### Workouts (Class plans)
+Page `gg.dark`; rows as today with `gg.cyan` selected; today badge `gg.yellow` with dark text (always visible on both states — replaces the cyan/navy swap).
+
+### Dialogs (Terms, Start class, Stop/Save)
+Title bar `gg.cyanDark`, body `gg.panel`, white text, buttons `gg.btn` / primary `gg.cyan`; 8 px radius.
+
+## 6. Constraints
+Chrome 81 (see anti-goals; CSS gradients, `border-radius`, `opacity` transitions are fine). Tailwind 3.4, literal class strings. Every existing test stays green or is updated only where a class name or label moved; `theme.test.ts` is rewritten for the new tokens. `src/encoding.test.ts` green. The vendor screenshots in `docs/reference/vendor-screenshots/` stop being the visual reference; the mock-up is.
+
+## 7. Left to the builder
+- Exact chip heights so the phone stack fits 412×915 without scrolling (verify in the preview).
+- How to produce the resized icon PNGs (committed files; any tool).
+- Splash implementation detail (timer + CSS transition) as long as it never blocks interaction after 1.5 s.
+- Legend placement inside the chart panels.
+
+## 8. Builder-check resolutions (controller calls, 2026-10-17)
+
+1. **Token fate (exact).** Survive, renamed: `gg.strip`→`gg.cyan`, `gg.bg`→`gg.dark` (body background too), `gg.pref`→`gg.dark`, `gg.dlg`→`gg.panel`, `gg.bar`→ removed (gradient bar), `gg.summary`→`gg.muted` = `#9e9e9e`, `gg.cat`→`gg.cyan`, `gg.zonebg`→`gg.light` (tablet NOW row), `gg.lap`→`gg.yellow`, `gg.btn`→`#3A3A3A` (white text everywhere it is used; update the START assertion), `gg.on`→`gg.green` = `#28A745` (GGWA status green; tablet START, Rider selected row, Sensors connected badge), `gg.paper`/`gg.pink`/`gg.text` → map to `gg.light` / `gg.red` / `#ffffff` and delete the old names. `src/ui/theme.ts` `THEME.on`/`THEME.strip` follow (`gg.green`/`gg.cyan`). `theme.test.ts` asserts exactly: cyan, cyanDark, cyanLight, yellow, red, dark, panel, btn, light, muted, green, zone.z1..z7, zonefill.z1..z7, hr.z1..z5 with `hr.z1 === gg.cyan`. Grep guard: no `gg-bg|gg-strip|gg-on|gg-lap|gg-pref|gg-summary|gg-dlg|gg-bar|gg-cat|gg-zonebg|gg-paper|gg-pink|gg-text` left in `src/`.
+2. **Breakpoints.** The new sizes in §5 are phone (< 600 px). Tablet keeps its current sizes and structure (45 px values, 25 px captions, full laps, all tiles) and only takes the palette, white chip text, and Speed as the first chip of the main row; the tablet third row drops its Speed tile (no duplicate "Speed"). Tests that pin tablet sizes stay; phone-size tests are updated.
+3. **Overflow.** Training phone: the page scrolls as a whole (`Shell fill` gets an `overflow-y-auto` variant for Training; nothing is pinned). Target: 412 × ~800 CSS px (standalone PWA on the Nothing Phone (1)). Spare height goes to the two charts (`flex-1` split 60/40 between them, min heights 60/46 px); the lap table is `flex-none`.
+4. **Button colours.** Idle START `gg.cyan` white text (phone and tablet; green retired on tablet); Restart `gg.btn`; Save-or-discard `gg.cyan`; START CLASS `gg.yellow` dark text; dialog primary `gg.cyan`, secondary `gg.btn`, Cancel link `gg.muted`. All `gg.btn` buttons are white text.
+5. **Icons.** `purpose: any` icons (192, 512, apple-touch, favicons) = emblem on a **white** square (iOS renders transparency black); maskable 512 = emblem on `#29ABE2` with 20 % safe padding. In-app emblem (Rider screen 48 px, Training/Home bar 36 px) = the transparent emblem on a white circle so its cyan ring reads against cyan. Tool: any; the PNGs are committed. The orange placeholder goes.
+6. **Splash.** Only on a cold launch: rendered when `sessionStorage['ig.splashed']` is unset, then set; never when `useRide` is recording/paused (a service-worker reload mid-ride shows no splash). Terms dialog autofocus happens after the splash unmounts (gate the dialog on splash done). Component test for Splash; `App` not rendered in tests.
+7. **Tablet bar, tones, details.** Tablet header takes the gradient and white text, structure unchanged. `Shell` tones collapse to two: `dark` (default, every screen) and `cyan` (Rider); `white`/`navy`/`black`/`pref` removed. Home keeps an `sr-only` h1 "Granny Gear". Stop/Save dialog: recolour only, no title text added.
+8. **Mock-up vs spec.** Spec wins: no drop-shadow; phone chip 22/12 px; the Review-terms / Choose-rider links stay; `RollingChart` `Series` gains `dash?: boolean`; chips strip the unit from `fmtSpeed` the way `fmtDistance` already does.
