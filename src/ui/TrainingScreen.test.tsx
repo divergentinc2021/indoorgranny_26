@@ -26,6 +26,18 @@ describe('TrainingScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: /discard/i }));
     expect(useRide.getState().engine).toBeNull();
   });
+  it('the NOW row is gone once the ride is stopped', () => {
+    useSettings.getState().set({ countdownS: 0 });
+    render(<MemoryRouter><TrainingScreen /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: /^start$/i }));
+    act(() => { vi.advanceTimersByTime(2000); });
+    expect(screen.getByText('now')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^stop$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /yes, stop/i }));
+    expect(useRide.getState().state).toBe('stopped');
+    expect(screen.queryByText('now')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /discard/i }));
+  });
   it('tapping the countdown starts the ride now without changing the countdown setting', () => {
     useSettings.getState().set({ countdownS: 5 });
     render(<MemoryRouter><TrainingScreen /></MemoryRouter>);

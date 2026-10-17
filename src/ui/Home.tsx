@@ -24,7 +24,7 @@ export default function Home() {
         </header>
         <div inert={!accepted} aria-hidden={!accepted ? true : undefined} className="flex-1 flex flex-col">
           <nav className="flex-1 flex flex-col p-[10px]">
-            {TILES.map(([label, to]) => <Link key={to} to={to} className="flex-1 flex items-center justify-center m-[10px] min-h-[56px] bg-gg-strip text-[22px] text-white text-center">{label}</Link>)}
+            {TILES.map(([label, to]) => <Link key={to} to={to} className="flex-1 flex items-center justify-center m-[10px] min-h-[56px] bg-gg-strip text-[22px] tab:text-[25px] text-white text-center">{label}</Link>)}
           </nav>
           <footer className="bg-gg-bg px-4 py-3 text-center text-[20px] text-white">improve your performance</footer>
         </div>

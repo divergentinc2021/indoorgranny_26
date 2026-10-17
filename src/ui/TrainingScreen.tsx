@@ -93,7 +93,7 @@ export default function TrainingScreen() {
       {workout && st.structuredWorkoutEnabled && wide && v && (
         <div className="mt-3"><WorkoutPanel workout={workout} elapsedS={Math.max(0, v.elapsedS - 1)} ftpW={rider?.ftpW ?? 250} hrMax={rider?.hrMax ?? 180} pctFtp={v.pctFtp} pctHr={v.pctHrMax} /></div>
       )}
-      <div className="flex-1 min-h-0 flex flex-col mt-[10px] tab:mt-3 tab:block tab:flex-none"><LapTable fill rows={ride.lapRows} now={{ number: v?.lapNumber ?? 1, durationS: v?.lapS ?? 0, distanceM: cur?.distanceM ?? 0, avgPower: cur?.avgPower ?? 0, avgHr: cur?.avgHr ?? 0, avgCad: cur?.avgCad ?? 0, avgSpeedMs: v?.speedMs ?? 0 }} zones={zones} unit={unit} /></div>
+      <div className="flex-1 min-h-0 flex flex-col mt-[10px] tab:mt-3 tab:block tab:flex-none"><LapTable fill rows={ride.lapRows} now={{ number: v?.lapNumber ?? 1, durationS: v?.lapS ?? 0, distanceM: cur?.distanceM ?? 0, avgPower: cur?.avgPower ?? 0, avgHr: cur?.avgHr ?? 0, avgCad: cur?.avgCad ?? 0, avgSpeedMs: v?.speedMs ?? 0 }} zones={zones} unit={unit} showNow={ride.state !== 'stopped'} /></div>
       {/* Phone order PAUSE | STOP | LAP; tablet STOP | PAUSE | LAP. */}
       <div className="flex-shrink-0 bg-gg-bg px-[10px] py-[5px] tab:sticky tab:bottom-0 tab:mt-4 tab:px-0 tab:py-2"><div className="grid grid-cols-3 gap-2">
         {ride.state === 'idle' && <button className={`col-span-3 ${GREY} tab:bg-gg-on`} onClick={() => ride.begin()}>Start</button>}

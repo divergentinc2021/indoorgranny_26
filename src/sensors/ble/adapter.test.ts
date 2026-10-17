@@ -163,6 +163,14 @@ describe('BleAdapter connection lifecycle', () => {
       expect(out).toEqual([['offline', 'Tap Reconnect to choose the device again']]);
       expect(a.needsChooser('hr')).toBe(true);
     });
+    it('treats a rejected getDevices exactly like no device object', async () => {
+      const bt = { requestDevice: vi.fn(), getDevices: vi.fn(async () => { throw new Error('getDevices blocked'); }) } as unknown as Bluetooth;
+      const a = new BleAdapter({ circumferenceMm: () => 2096, bluetooth: bt });
+      const out = msgs(a);
+      await expect(a.connect(d)).resolves.toBeUndefined();
+      expect(out).toEqual([['offline', 'Tap Reconnect to choose the device again']]);
+      expect(a.needsChooser('hr')).toBe(true);
+    });
     it('keeps the chooser flag when the user cancels the chooser', async () => {
       const bt = { requestDevice: vi.fn(async () => { throw new Error('User cancelled'); }) } as unknown as Bluetooth;
       const a = new BleAdapter({ circumferenceMm: () => 2096, bluetooth: bt });

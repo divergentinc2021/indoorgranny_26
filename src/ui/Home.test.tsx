@@ -28,6 +28,16 @@ describe('Home', () => {
   });
 });
 
+describe('Home tiles', () => {
+  it('tile labels are 22 px on the phone and 25 px on the tablet', () => {
+    useSettings.getState().set({ licenseAccepted: true });
+    render(<MemoryRouter><Home /></MemoryRouter>);
+    const tile = screen.getByRole('link', { name: 'TRAINING' });
+    expect(tile).toHaveClass('text-[22px]');
+    expect(tile).toHaveClass('tab:text-[25px]');
+  });
+});
+
 describe('Home terms dialog (phone parity)', () => {
   it('Decline closes the dialog but keeps the app gated; Review terms reopens it', () => {
     useSettings.getState().set({ licenseAccepted: false });

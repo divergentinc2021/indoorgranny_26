@@ -51,7 +51,7 @@ export class BleAdapter implements SensorSource {
 
   async connect(d: PairedDevice): Promise<void> {
     let dev = this.devices.get(d.slot);
-    if (!dev && this.bt?.getDevices) dev = (await this.bt.getDevices()).find((x) => x.id === d.id);
+    if (!dev && this.bt?.getDevices) { try { dev = (await this.bt.getDevices()).find((x) => x.id === d.id); } catch { /* getDevices can reject (permissions policy, flag off): same as no device object */ } }
     if (!dev) { this.chooser.add(d.slot); this.setState(d.slot, 'offline', CHOOSER_HINT); return; }
     this.chooser.delete(d.slot);
     this.devices.set(d.slot, dev);
