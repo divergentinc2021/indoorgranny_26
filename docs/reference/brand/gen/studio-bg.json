@@ -1,0 +1,31 @@
+{
+  "prompt": "Moody indoor cycling studio at night, a row of black spin bikes with yellow accents receding into darkness on a dark rubber floor, warm yellow rim light from the right, cool cyan spill from the left, shallow depth of field, cinematic, empty room, no people, no text, no logos, no signage, portrait composition with empty dark space in the upper third",
+  "revised_prompt": null,
+  "endpoint": "generations",
+  "params": {
+    "model": "gpt-image-2",
+    "prompt": "Moody indoor cycling studio at night, a row of black spin bikes with yellow accents receding into darkness on a dark rubber floor, warm yellow rim light from the right, cool cyan spill from the left, shallow depth of field, cinematic, empty room, no people, no text, no logos, no signage, portrait composition with empty dark space in the upper third",
+    "n": 1,
+    "size": "1024x1536",
+    "quality": "medium",
+    "output_format": "jpeg",
+    "output_compression": 72
+  },
+  "inputs": [],
+  "mask": null,
+  "usage": {
+    "input_tokens": 80,
+    "input_tokens_details": {
+      "image_tokens": 0,
+      "text_tokens": 80
+    },
+    "output_tokens": 1372,
+    "output_tokens_details": {
+      "image_tokens": 1372,
+      "text_tokens": 0
+    },
+    "total_tokens": 1452
+  },
+  "created": 1792240998,
+  "seconds": 26.7
+}
