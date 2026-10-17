@@ -4,6 +4,7 @@ import { useRiders } from './rider-store';
 import { useRide } from './ride-store';
 import { useSensors } from './sensor-store';
 import { newRider, migrateRiders, putRider, listRiders } from '../data/riders';
+import * as ridersModule from '../data/riders';
 import { listSessions } from '../data/sessions';
 
 describe('settings store', () => {
@@ -39,6 +40,18 @@ describe('migrateRiders', () => {
     await putRider(legacy);
     await useRiders.getState().load();
     expect(useRiders.getState().riders.find((r) => r.id === legacy.id)!.cpW).toBeUndefined();
+    expect((await listRiders()).find((r) => r.id === legacy.id)!.cpW).toBeUndefined();
+  });
+  it('load() still populates the migrated riders when the write-back fails, and retries on the next load', async () => {
+    const legacy = { ...newRider({ name: 'Shadow', email: 's@x', ftpW: 250 }), cpW: 250 };
+    await putRider(legacy);
+    const spy = vi.spyOn(ridersModule, 'putRider').mockRejectedValue(new Error('quota'));
+    try {
+      await expect(useRiders.getState().load()).resolves.toBeUndefined();
+      expect(useRiders.getState().riders.find((r) => r.id === legacy.id)!.cpW).toBeUndefined();
+      expect((await listRiders()).find((r) => r.id === legacy.id)!.cpW).toBe(250);
+    } finally { spy.mockRestore(); }
+    await useRiders.getState().load();
     expect((await listRiders()).find((r) => r.id === legacy.id)!.cpW).toBeUndefined();
   });
 });

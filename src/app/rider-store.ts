@@ -6,8 +6,8 @@ export const useRiders = create<S>()(persist((set, get) => ({
   riders: [], currentId: null,
   load: async () => {
     const stored = await listRiders(); const riders = migrateRiders(stored);
-    // Persist only what the migration changed, so it runs once per rider.
-    await Promise.all(riders.filter((r, i) => r !== stored[i]).map((r) => putRider(r)));
+    // Persist only what the migration changed, so it runs once per rider. A failed write must not hide the riders: the next load retries it.
+    await Promise.all(riders.filter((r, i) => r !== stored[i]).map((r) => putRider(r).catch(() => {})));
     set({ riders });
   },
   save: async (r) => { await putRider(r); await get().load(); },
