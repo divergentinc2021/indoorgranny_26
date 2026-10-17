@@ -49,6 +49,9 @@ Cloudflare Pages, git-connected: push to `main` for production; every other bran
 8. Activity logs → row shows date, rider, duration, distance, kcal → Download FIT → file lands in Downloads as GrannyGear_date_time_rider.fit (Android has no viewer: open it from Wahoo / Garmin Connect, or upload at strava.com/upload) → activity appears with power + HR.
 9. Airplane mode → relaunch from the icon → app opens (offline) and history is intact.
 10. Relaunch the app, open Training: sensors reconnect (or Reconnect sensors opens the chooser).
+11. Workouts → Class plans shows Session 1 with a `today` badge on 19 Oct; Import .seconds adds the owner's file.
+12. Training → START → WARM UP → START CLASS: the bar shows the interval, laps close on their own, the phone vibrates/beeps at each change.
+13. Power-only sensors (no wheel sensor): Distance ticks (≈ 23 km/h at 80 W).
 
 Note: Chrome throttles timers in background tabs, so keep the app in the foreground during a ride.
 

@@ -2682,3 +2682,5 @@ Device: Nothing Phone (1), Chrome. Date: pending.
 | 7 | Stop, confirm, Save | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
 | 8 | Activity logs row, Share as FIT, manual Strava upload shows power + HR | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
 | 9 | Airplane mode relaunch: opens offline, history intact | pending — awaiting Pages deploy (Task 1 deploy, Pages project) |
+
+Steps 11–13 (class plans, class ride, power-only distance) are logged in `docs/superpowers/plans/2026-10-17-class-mode-and-polish.md`.
