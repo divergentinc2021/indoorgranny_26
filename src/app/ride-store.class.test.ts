@@ -117,6 +117,14 @@ describe('ride store class mode', () => {
     expect(st().lapRows).toHaveLength(n); expect(st().classPhase).toBe('none');
   });
 
+  it('stop from paused during class still names the final lap after the interval', async () => {
+    st().begin({ classMode: 'class' });
+    await adv(100); st().pause(); await adv(20);
+    st().stop();
+    expect(st().classPhase).toBe('none');
+    expect(st().lapRows).toHaveLength(1); expect(st().lapRows[0].name).toBe('Endurance 80+ 5:00');
+  });
+
   it('stop while in the done window cancels the pending reset timer', async () => {
     st().begin({ classMode: 'class' });
     await adv(480); expect(st().classPhase).toBe('done');

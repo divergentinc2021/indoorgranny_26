@@ -109,6 +109,7 @@ export const useRide = create<S>((set, get) => ({
     if (e.state === 'idle') { get().discard(); return; }
     // Flush a boundary the 1 Hz tick has not seen yet, then name the final partial lap after the interval the rider was in.
     let lastName: string | undefined;
+    if (e.state === 'paused') e.resume();   // engine.stop() resumes anyway; doing it first lets the class block below run for a paused stop too
     if (runner && ridePlan && get().classPhase === 'class' && e.state === 'recording') {
       const from = runner.status.index, status = runner.tick(e.view.elapsedS);
       if (status.boundary) closeIntervals(e, from, status.index);
