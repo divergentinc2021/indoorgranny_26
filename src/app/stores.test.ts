@@ -3,7 +3,7 @@ import { useSettings } from './settings-store';
 import { useRiders } from './rider-store';
 import { useRide } from './ride-store';
 import { useSensors } from './sensor-store';
-import { newRider } from '../data/riders';
+import { newRider, migrateRiders, putRider, listRiders } from '../data/riders';
 import { listSessions } from '../data/sessions';
 
 describe('settings store', () => {
@@ -13,6 +13,33 @@ describe('settings store', () => {
     s.setDevice('hr', { slot: 'hr', id: 'x', name: 'Strap' });
     expect(useSettings.getState().devices.hr?.name).toBe('Strap');
     expect(JSON.parse(localStorage.getItem('ig.settings')!).state.devices.hr.id).toBe('x');
+  });
+});
+
+describe('migrateRiders', () => {
+  const base = newRider({ name: 'Ann', email: 'a@x', ftpW: 250 });
+  it('drops a CP that equals FTP and was never typed (legacy shadow)', () => {
+    expect(migrateRiders([{ ...base, cpW: 250 }])[0].cpW).toBeUndefined();
+  });
+  it('keeps an explicit CP, even one equal to FTP', () => {
+    const r = { ...base, cpW: 250, cpExplicit: true };
+    expect(migrateRiders([r])).toEqual([r]);
+  });
+  it('keeps a CP that differs from FTP', () => {
+    const r = { ...base, cpW: 230 };
+    expect(migrateRiders([r])).toEqual([r]);
+  });
+  it('is idempotent and leaves unchanged riders as the same objects', () => {
+    const once = migrateRiders([{ ...base, cpW: 250 }, base]);
+    expect(migrateRiders(once)).toEqual(once);
+    expect(migrateRiders(once)[1]).toBe(once[1]);
+  });
+  it('useRiders.load() applies it and writes the changed rider back', async () => {
+    const legacy = { ...newRider({ name: 'Legacy', email: 'l@x', ftpW: 250 }), cpW: 250 };
+    await putRider(legacy);
+    await useRiders.getState().load();
+    expect(useRiders.getState().riders.find((r) => r.id === legacy.id)!.cpW).toBeUndefined();
+    expect((await listRiders()).find((r) => r.id === legacy.id)!.cpW).toBeUndefined();
   });
 });
 

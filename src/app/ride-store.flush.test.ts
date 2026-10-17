@@ -41,7 +41,7 @@ describe('ride store partial flush', () => {
     expect(useRide.getState().storageError).toBeNull();
     await vi.advanceTimersByTimeAsync(10000);
     await vi.advanceTimersByTimeAsync(0);
-    expect(useRide.getState().storageError).toBe('history not saved');
+    expect(useRide.getState().storageError).toBe('Could not save history — your ride is still on screen');
     useRide.getState().discard();
     useRide.getState().begin();
     expect(useRide.getState().storageError).toBeNull();
@@ -53,7 +53,7 @@ describe('ride store partial flush', () => {
     await vi.advanceTimersByTimeAsync(2000);
     useRide.getState().stop(); useRide.getState().discard();
     for (let i = 0; i < 50 && !useRide.getState().storageError; i++) await new Promise((r) => setTimeout(r, 5));
-    expect(useRide.getState().storageError).toBe('history not saved');
+    expect(useRide.getState().storageError).toBe('Could not delete the discarded ride — it will still show in Logs');
   });
   it('discarding during the countdown cancels it for good', async () => {
     useSettings.getState().set({ countdownS: 5 });

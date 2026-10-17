@@ -12,7 +12,8 @@ interface S { storageError: string | null; engine: RideEngine | null; view: Ride
 let timer: ReturnType<typeof setInterval> | null = null;
 // Tail of the most recent partial flush; discard() waits on it so a late flush can never resurrect a deleted row.
 let lastFlush: Promise<unknown> = Promise.resolve();
-const STORAGE_ERROR = 'history not saved';
+const FLUSH_ERROR = 'Could not save history — your ride is still on screen';
+const DISCARD_ERROR = 'Could not delete the discarded ride — it will still show in Logs';
 const clear = () => { if (timer) clearInterval(timer); timer = null; };
 // The rider is captured at begin(): picking someone else mid-ride must not re-label (or re-weigh) the ride in progress.
 type RideRider = Pick<Rider, 'id' | 'name' | 'weightKg' | 'ftpW' | 'cpW' | 'wprimeKj' | 'hrMax'>;
@@ -40,7 +41,7 @@ export const useRide = create<S>((set, get) => ({
         set({ view: engine.view, state: engine.state });
         // Partial flush: a crash or tab kill loses at most ~10 s. saveSession uses put, so repeats are idempotent.
         // Gate on the tick result: tick() returns null while paused, so the length stays frozen and would re-flush every second.
-        if (sample && engine.samples.length % 10 === 0) lastFlush = saveSession(toRecord(engine, rideRider), engine.laps.rows, engine.samples.slice(-10)).catch(() => { set({ storageError: STORAGE_ERROR }); });
+        if (sample && engine.samples.length % 10 === 0) lastFlush = saveSession(toRecord(engine, rideRider), engine.laps.rows, engine.samples.slice(-10)).catch(() => { set({ storageError: FLUSH_ERROR }); });
       }, 1000);
     };
     if (st.countdownS > 0 && !opts?.skipCountdown) {
@@ -68,5 +69,5 @@ export const useRide = create<S>((set, get) => ({
     set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null, storageError: null });
     return s;
   },
-  discard: () => { const e = get().engine; if (e && e.startMs) { const id = e.startMs; void lastFlush.then(() => deleteSession(id)).catch(() => { set({ storageError: STORAGE_ERROR }); }); } clear(); set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null }); },
+  discard: () => { const e = get().engine; if (e && e.startMs) { const id = e.startMs; void lastFlush.then(() => deleteSession(id)).catch(() => { set({ storageError: DISCARD_ERROR }); }); } clear(); set({ engine: null, view: null, state: 'idle', lapRows: [], countdownLeft: null }); },
 }));

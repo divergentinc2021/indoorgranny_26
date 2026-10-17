@@ -62,10 +62,10 @@ describe('TrainingScreen', () => {
     expect(useRide.getState().engine).toBeNull();
     expect(useRide.getState().countdownLeft).toBeNull();
   });
-  it('shows a history-not-saved alert while the store reports a storage error', () => {
-    useRide.setState({ storageError: 'history not saved' });
+  it('shows the store storage error verbatim in an alert, cleared with it', () => {
+    useRide.setState({ storageError: 'Could not save history — your ride is still on screen' });
     render(<MemoryRouter><TrainingScreen /></MemoryRouter>);
-    expect(screen.getByRole('alert')).toHaveTextContent('History not saved — retry on Stop');
+    expect(screen.getByRole('alert').textContent).toBe('Could not save history — your ride is still on screen');
     act(() => { useRide.setState({ storageError: null }); });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
@@ -80,7 +80,7 @@ describe('TrainingScreen', () => {
     spy.mockClear();
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^save$/i })); });
     expect(screen.getByText(/save it\?/i)).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent(/disk full/i);
+    expect(screen.getByRole('alert').textContent).toBe('Could not save — your ride is still on screen, tap Save again');
     expect(useRide.getState().state).toBe('stopped');
     spy.mockResolvedValue(undefined);
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^retry$/i })); });

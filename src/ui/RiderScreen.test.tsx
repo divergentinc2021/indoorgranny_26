@@ -43,10 +43,12 @@ describe('RiderScreen', () => {
     fireEvent.change(screen.getByLabelText(/^cp/i), { target: { value: '260' } });
     fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
     await waitFor(() => expect(useRiders.getState().riders[0].cpW).toBe(260));
+    expect(useRiders.getState().riders[0].cpExplicit).toBe(true);
     fireEvent.click(await screen.findByRole('button', { name: 'Edit Ann' }));
     fireEvent.change(screen.getByLabelText(/^cp/i), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: /^save$/i }));
     await waitFor(() => expect(useRiders.getState().riders[0].cpW).toBeUndefined());
+    expect(useRiders.getState().riders[0].cpExplicit).toBeUndefined();
   });
 
   it('edits a rider in place, keeping id and power zones', async () => {

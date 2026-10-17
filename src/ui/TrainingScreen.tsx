@@ -67,7 +67,7 @@ export default function TrainingScreen() {
       {ride.countdownLeft !== null && <CountdownModal left={ride.countdownLeft} onSkip={() => { ride.discard(); ride.begin({ skipCountdown: true }); }} />}
       {confirmStop && <Dialog text="STOP this session?" yes="Yes, stop" onYes={() => { setConfirmStop(false); ride.stop(); setAskSave(true); }} onNo={() => setConfirmStop(false)} />}
       {askSave && <Dialog text="Do you want to save it?" yes={saveError ? 'Retry' : 'Save'} no="Discard" error={saveError} onYes={() => void doSave()} onNo={() => { setAskSave(false); setSaveError(null); ride.discard(); setHist(EMPTY_HIST); }} />}
-      {ride.storageError && <div role="alert" className="bg-white text-red-700 font-bold text-[16px] px-2 py-1">History not saved — retry on Stop</div>}
+      {ride.storageError && <div role="alert" className="bg-white text-red-700 font-bold text-[16px] px-2 py-1">{ride.storageError}</div>}
       <div className="hidden tab:block text-[14px] text-white px-1 mb-1">Rider: {rider?.name ?? 'Guest'}</div>
       <Tile size="bare" label="Elapsed" value={fmtClock(v?.elapsedS ?? 0)} sub={`lap ${fmtDuration(v?.lapS ?? 0)}${v?.prevLapS != null ? ` · prev ${fmtDuration(v.prevLapS)}` : ''}`} />
       <div className="grid grid-cols-3">
@@ -129,7 +129,7 @@ function Dialog({ text, yes, no = 'No', error, onYes, onNo }: { text: string; ye
     <div role="dialog" aria-modal="true" className="fixed top-0 right-0 bottom-0 left-0 bg-black/80 flex items-center justify-center p-6 z-10">
       <div className="bg-white text-gg-bg border-2 border-gg-bg rounded-[15px] p-5 w-full max-w-sm space-y-4">
         <p className="text-lg">{text}</p>
-        {error && <p role="alert" className="text-red-700 font-bold text-sm">Could not save: {error}</p>}
+        {error && <p role="alert" className="text-red-700 font-bold text-sm">Could not save — your ride is still on screen, tap Save again</p>}
         <div className="flex"><button className="flex-1 mr-2 bg-gg-strip text-white border-2 border-gg-bg rounded-[15px] py-2" onClick={onYes}>{yes}</button><button className="flex-1 bg-white text-gg-bg border-2 border-gg-bg rounded-[15px] py-2" onClick={onNo}>{no}</button></div>
       </div>
     </div>
