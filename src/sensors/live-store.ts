@@ -14,6 +14,6 @@ export class LiveStore {
   private get(kind: SensorKind, now: number) { const e = this.v.get(kind); return e && now - e.at <= this.staleMs ? e : undefined; }
   snapshot(now: number): LiveInput {
     const t = this.get('trainer', now);
-    return { hr: this.get('hr', now)?.value ?? 0, power: this.get('power', now)?.value ?? 0, cadence: this.get('cadence', now)?.value ?? 0, speedMs: this.get('speed', now)?.value ?? 0, trainerDistanceM: t?.extra?.distanceM, trainerKcal: t?.extra?.kcal };
+    return { hr: this.get('hr', now)?.value ?? 0, power: this.get('power', now)?.value ?? 0, cadence: this.get('cadence', now)?.value ?? 0, speedMs: this.get('speed', now)?.value ?? 0, speedSensorPresent: !!this.get('speed', now) || !!this.get('trainer', now), trainerDistanceM: t?.extra?.distanceM, trainerKcal: t?.extra?.kcal };
   }
 }

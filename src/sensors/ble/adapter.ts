@@ -112,7 +112,7 @@ export class BleAdapter implements SensorSource {
     if (char === UUIDS.HR_MEASUREMENT) { const r = parseHeartRate(dv); if (r) this.emit({ kind: 'hr', value: r.bpm, at, slot }); return; }
     if (char === UUIDS.CSC_MEASUREMENT) {
       const r = parseCsc(dv); if (!r) return;
-      if (r.wheelRevs !== undefined && r.wheelTime1024 !== undefined) { const c = this.counter(this.wheel, slot, 1024, 32); const rate = c.push(r.wheelRevs, r.wheelTime1024, at); if (rate !== null) this.emit({ kind: 'speed', value: speedMs(rate, this.o.circumferenceMm()), at, slot }); }
+      if (r.wheelRevs !== undefined && r.wheelTime1024 !== undefined) { const c = this.counter(this.wheel, slot, 1024, 32); const rate = c.push(r.wheelRevs, r.wheelTime1024, at); this.emit({ kind: 'speed', value: speedMs(rate ?? c.value(at), this.o.circumferenceMm()), at, slot }); } // every wheel packet, so a stopped or first one still marks the sensor present
       if (r.crankRevs !== undefined && r.crankTime1024 !== undefined) { const c = this.counter(this.crank, slot, 1024, 16); const rate = c.push(r.crankRevs, r.crankTime1024, at); if (rate !== null) this.emit({ kind: 'cadence', value: cadenceRpm(rate), at, slot }); }
       return;
     }
@@ -120,7 +120,7 @@ export class BleAdapter implements SensorSource {
       const r = parseCyclingPower(dv); if (!r) return;
       this.emit({ kind: 'power', value: r.watts, at, slot });
       if (r.crankRevs !== undefined && r.crankTime1024 !== undefined) { const c = this.counter(this.crank, slot, 1024, 16); const rate = c.push(r.crankRevs, r.crankTime1024, at); if (rate !== null) this.emit({ kind: 'cadence', value: cadenceRpm(rate), at, slot }); }
-      if (r.wheelRevs !== undefined && r.wheelTime2048 !== undefined) { const c = this.counter(this.wheel, slot, 2048, 32); const rate = c.push(r.wheelRevs, r.wheelTime2048, at); if (rate !== null) this.emit({ kind: 'speed', value: speedMs(rate, this.o.circumferenceMm()), at, slot }); }
+      if (r.wheelRevs !== undefined && r.wheelTime2048 !== undefined) { const c = this.counter(this.wheel, slot, 2048, 32); const rate = c.push(r.wheelRevs, r.wheelTime2048, at); this.emit({ kind: 'speed', value: speedMs(rate ?? c.value(at), this.o.circumferenceMm()), at, slot }); } // every wheel packet, so a stopped or first one still marks the sensor present
       return;
     }
     if (char === UUIDS.FTMS_INDOOR_BIKE) {

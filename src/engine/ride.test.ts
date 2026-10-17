@@ -5,7 +5,7 @@ function mk(smoothingN: 1 | 5 | 10 | 30 = 1) {
   const e = new RideEngine({ rider, smoothingN, now: () => t });
   return { e, advance: (ms: number) => { t += ms; } };
 }
-const live = (power: number, hr = 120, cadence = 90, speedMs = 8) => ({ hr, power, cadence, speedMs });
+const live = (power: number, hr = 120, cadence = 90, speedMs = 8, speedSensorPresent = speedMs > 0) => ({ hr, power, cadence, speedMs, speedSensorPresent });
 
 describe('RideEngine', () => {
   it('idle → recording → stopped, elapsed counts from 1 like the vendor', () => {
@@ -184,5 +184,44 @@ describe('RideEngine', () => {
     e.tick(live(200)); advance(1000); e.tick(live(200));
     const ts = e.samples.map((x) => x.t);
     for (let i = 1; i < ts.length; i++) expect(ts[i]).toBeGreaterThan(ts[i - 1]);
+  });
+});
+
+describe('RideEngine virtual speed', () => {
+  const run = (e: RideEngine, advance: (ms: number) => void, n: number, input: ReturnType<typeof live> & { trainerDistanceM?: number }) => { for (let i = 0; i < n; i++) { e.tick(input); advance(1000); } };
+  it('power-only ride uses virtual speed: 80 W for 10 ticks ≈ 60 m, speedSource virtual', () => {
+    const { e, advance } = mk();
+    e.start(); run(e, advance, 10, live(80, 120, 90, 0));
+    expect(Math.abs(e.view.distanceM - 6.30 * 9.5)).toBeLessThan(0.5); // trapezoid integrator: half a step for the first tick, then 9 full steps
+    expect(e.view.speedSource).toBe('virtual');
+    expect(e.samples[9].speedMs).toBeCloseTo(6.30, 2);
+  });
+  it('a present wheel sensor reading 0 keeps distance at 0 and speedSource sensor', () => {
+    const { e, advance } = mk();
+    e.start(); run(e, advance, 5, live(200, 120, 90, 0, true));
+    expect(e.view.distanceM).toBe(0); expect(e.view.speedSource).toBe('sensor');
+  });
+  it('once a wheel sensor is seen the ride never falls back to virtual', () => {
+    const { e, advance } = mk();
+    e.start(); run(e, advance, 3, live(200, 120, 90, 8, true));
+    const before = e.view.distanceM;
+    run(e, advance, 1, live(200, 120, 90, 0, false));       // sensor speed falling to 0 still integrates its last half-step
+    const settled = e.view.distanceM; expect(settled - before).toBeLessThan(4.01);
+    run(e, advance, 2, live(200, 120, 90, 0, false));
+    expect(e.view.distanceM).toBe(settled); expect(e.view.speedSource).toBe('sensor');
+  });
+  it('trainer distance wins over virtual and never returns', () => {
+    const { e, advance } = mk();
+    e.start(); run(e, advance, 2, live(200, 120, 90, 0));
+    expect(e.view.speedSource).toBe('virtual');
+    run(e, advance, 1, { ...live(200, 120, 90, 0), trainerDistanceM: 5000 });
+    expect(e.view.speedSource).toBe('trainer');
+    run(e, advance, 2, live(200, 120, 90, 0));
+    expect(e.view.speedSource).toBe('trainer');
+  });
+  it('0 W with no sensors → speedSource none, distance 0', () => {
+    const { e, advance } = mk();
+    e.start(); run(e, advance, 3, live(0, 120, 0, 0));
+    expect(e.view.speedSource).toBe('none'); expect(e.view.distanceM).toBe(0);
   });
 });

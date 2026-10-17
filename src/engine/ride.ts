@@ -2,8 +2,9 @@ import { Stat, DistanceIntegrator, Cumulative, caloriesMet, kJ, pctOf } from './
 import { LapTracker, LapRow } from './laps';
 import { WBal } from './wbal';
 import { Ema } from './smoothing';
+import { virtualSpeedMs } from './virtual-speed';
 
-export interface LiveInput { hr: number; power: number; cadence: number; speedMs: number; trainerDistanceM?: number; trainerKcal?: number }
+export interface LiveInput { hr: number; power: number; cadence: number; speedMs: number; speedSensorPresent?: boolean; trainerDistanceM?: number; trainerKcal?: number }
 export interface RiderParams { weightKg: number; ftpW: number; cpW?: number; wprimeKj: number; hrMax: number }
 export interface RideOpts { rider: RiderParams; smoothingN: 1 | 5 | 10 | 30; now?: () => number }
 export type RideState = 'idle' | 'recording' | 'paused' | 'stopped';
@@ -15,6 +16,7 @@ export interface RideView {
   cadence: number; cadenceSmooth: number; avgCad: number; maxCad: number;
   speedMs: number; distanceM: number; calories: number; kJ: number; pctFtp: number; pctHrMax: number;
   wbalPct: number; wbalRemainingJ: number; lapNumber: number;
+  speedSource: 'sensor' | 'trainer' | 'virtual' | 'none';
 }
 
 export class RideEngine {
@@ -34,6 +36,8 @@ export class RideEngine {
   // Trainer totals are measured as growth since the first value; once a trainer has supplied one the integrator/MET estimate is retired for the ride.
   private trainerDist = new Cumulative(); private trainerKcal = new Cumulative();
   private distCarry = 0; private kcalCarry = 0;
+  // Decided per ride: a wheel/trainer speed sensor, once seen, owns speed for good; otherwise power > 0 gives a virtual (estimated) speed.
+  private speedMode: 'undecided' | 'sensor' | 'virtual' = 'undecided';
 
   constructor(private readonly o: RideOpts) {
     this.now = o.now ?? (() => Date.now());
@@ -66,21 +70,23 @@ export class RideEngine {
     const nowMs = this.now();
     const dtS = this.samples.length ? Math.max(0, (nowMs - this.lastTickMs) / 1000) : 1;
     this.lastTickMs = nowMs;
-    this.last = input;
+    if (input.speedSensorPresent) this.speedMode = 'sensor';
+    const speedMs = this.speedMode === 'sensor' ? input.speedMs : input.power > 0 ? (this.speedMode = 'virtual', virtualSpeedMs(input.power)) : input.speedMs;
+    this.last = { ...input, speedMs };
     this.power.push(input.power); this.hr.push(input.hr); this.cad.push(input.cadence);
     this.emaP.push(input.power); this.emaC.push(input.cadence);
     this.wbal.tick(input.power);
     const elapsedS = this.elapsedS();
-    const integrated = this.dist.push(input.speedMs, dtS);
+    const integrated = this.dist.push(speedMs, dtS);
     if (!this.trainerDist.seen && input.trainerDistanceM !== undefined) this.distCarry = this.distanceM;
     if (!this.trainerKcal.seen && input.trainerKcal !== undefined) this.kcalCarry = this.calories;
     this.trainerDist.push(input.trainerDistanceM); this.trainerKcal.push(input.trainerKcal);
     this.distanceM = this.trainerDist.seen ? this.distCarry + this.trainerDist.total : integrated;
     this.calories = this.trainerKcal.seen ? this.kcalCarry + this.trainerKcal.total : caloriesMet(this.o.rider.weightKg, (elapsedS - 1) / 3600);
-    this.laps.sample({ power: input.power, hr: input.hr, cadence: input.cadence, speedMs: input.speedMs, distanceM: this.distanceM, calories: this.calories, elapsedS });
+    this.laps.sample({ power: input.power, hr: input.hr, cadence: input.cadence, speedMs, distanceM: this.distanceM, calories: this.calories, elapsedS });
     const prevT = this.samples.length ? this.samples[this.samples.length - 1].t : 0;
     const t = Math.max(prevT + 1, elapsedS); // a sub-second pause can repeat the floored second; sample keys must be unique
-    const s: Sample = { t, hr: input.hr, cadence: input.cadence, power: input.power, lap: this.laps.current.number, distanceM: this.distanceM, speedMs: input.speedMs };
+    const s: Sample = { t, hr: input.hr, cadence: input.cadence, power: input.power, lap: this.laps.current.number, distanceM: this.distanceM, speedMs };
     this.samples.push(s);
     return s;
   }
@@ -96,6 +102,7 @@ export class RideEngine {
       speedMs: this.last.speedMs, distanceM: this.distanceM, calories: this.calories,
       kJ: kJ(this.power.avg, elapsedS), pctFtp: pctOf(this.last.power, this.o.rider.ftpW), pctHrMax: pctOf(this.last.hr, this.o.rider.hrMax),
       wbalPct: this.wbal.pctExpended, wbalRemainingJ: this.wbal.remainingJ, lapNumber: this.laps.current.number,
+      speedSource: this.trainerDist.seen ? 'trainer' : this.speedMode === 'undecided' ? 'none' : this.speedMode,
     };
   }
 }

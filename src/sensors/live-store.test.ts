@@ -18,4 +18,17 @@ describe('LiveStore', () => {
     s.accept(r('hr', 150, 'hr', 1000));
     expect(s.snapshot(5999).hr).toBe(150); expect(s.snapshot(6001).hr).toBe(0);
   });
+  it('speedSensorPresent is true with a fresh speed or trainer reading, false otherwise and after stale', () => {
+    const s = new LiveStore(); s.setPaired(['csc', 'trainer']);
+    expect(s.snapshot(1000).speedSensorPresent).toBe(false);
+    s.accept(r('speed', 0, 'csc', 1000));                 // a stopped wheel still counts as present
+    expect(s.snapshot(1500).speedSensorPresent).toBe(true);
+    expect(s.snapshot(6001).speedSensorPresent).toBe(false);
+    const t = new LiveStore(); t.setPaired(['trainer']);
+    t.accept(r('trainer', 0, 'trainer', 1000, { distanceM: 5 }));
+    expect(t.snapshot(1500).speedSensorPresent).toBe(true);
+    const c = new LiveStore(); c.setPaired(['csc']);
+    c.accept(r('cadence', 80, 'csc', 1000));              // cadence-only sensor does not count
+    expect(c.snapshot(1500).speedSensorPresent).toBe(false);
+  });
 });

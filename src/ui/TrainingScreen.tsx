@@ -83,7 +83,7 @@ export default function TrainingScreen() {
       </div>
       <div className="hidden tab:grid grid-cols-3">
         <Tile size="small" label="%FTP" value={Math.round(v?.pctFtp ?? 0)} sub={`FTP ${rider?.ftpW ?? 250} W`} />
-        <Tile size="small" label="Speed" value={fmtSpeed(v?.speedMs ?? 0, unit)} />
+        <Tile size="small" label={v?.speedSource === 'virtual' ? 'Speed (est.)' : 'Speed'} value={fmtSpeed(v?.speedMs ?? 0, unit)} />
         <Tile size="small" label="W'bal" value={`${(v?.wbalPct ?? 0).toFixed(0)}%`} sub="expended" />
       </div>
       <div data-testid="charts" className="hidden tab:block mt-3 space-y-2">

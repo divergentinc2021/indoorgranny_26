@@ -16,6 +16,26 @@ describe('BleAdapter.handleValue', () => {
     a.handleValue('csc', 0x2a5b, new DataView(Uint8Array.from([0x02, 0x02, 0x00, 0x00, 0x04]).buffer), 1000);
     expect(out).toEqual([{ kind: 'cadence', value: 120, at: 1000, slot: 'csc' }]);
   });
+  it('CSC wheel packets emit a speed reading every time, so a stopped or first packet still marks the sensor present', () => {
+    const a = new BleAdapter({ circumferenceMm: () => 2000 });
+    const out: any[] = []; a.onReading((x) => out.push(x));
+    const wheel = (revs: number, ticks: number) => new DataView(Uint8Array.from([0x01, revs & 0xff, revs >> 8, 0, 0, ticks & 0xff, ticks >> 8]).buffer);
+    a.handleValue('csc', 0x2a5b, wheel(0, 0), 0);          // first packet primes the counter
+    a.handleValue('csc', 0x2a5b, wheel(4, 1024), 1000);    // 4 rev in 1 s × 2 m
+    a.handleValue('csc', 0x2a5b, wheel(4, 1024), 2000);    // identical packet: no new event, rate carries
+    expect(out.map((x) => x.kind)).toEqual(['speed', 'speed', 'speed']);
+    expect(out.map((x) => x.value)).toEqual([0, 8, 8]);
+  });
+  it('CPS wheel data also emits speed on every wheel-bearing packet', () => {
+    const a = new BleAdapter({ circumferenceMm: () => 2000 });
+    const out: any[] = []; a.onReading((x) => out.push(x));
+    // flags 0x0010 = wheel revolution data present; power 100 W; wheel revs u32; wheel time u16 (1/2048 s)
+    const pkt = (revs: number, ticks: number) => new DataView(Uint8Array.from([0x10, 0x00, 100, 0, revs & 0xff, 0, 0, 0, ticks & 0xff, ticks >> 8]).buffer);
+    a.handleValue('power', 0x2a63, pkt(0, 0), 0);
+    expect(out.filter((x) => x.kind === 'speed')).toEqual([{ kind: 'speed', value: 0, at: 0, slot: 'power' }]);
+    a.handleValue('power', 0x2a63, pkt(4, 0x0800), 1000);
+    expect(out.filter((x) => x.kind === 'speed').map((x) => x.value)).toEqual([0, 8]);
+  });
   it('malformed packets emit nothing', () => {
     const a = new BleAdapter({ circumferenceMm: () => 2096 });
     const out: any[] = []; a.onReading((x) => out.push(x));
