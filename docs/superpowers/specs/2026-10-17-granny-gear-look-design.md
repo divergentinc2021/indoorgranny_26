@@ -219,3 +219,7 @@ ANTicP's `.seconds` reader only took `packs[0].items[0]` and mapped colours `0�
 ## 23. v21 (Laurent, 2026-10-17). Reference `docs/reference/brand/look-v21.html`.
 - Plan detail: the bottom action is **RIDE** with two buttons, **WARM UP** (grey) and **START CLASS** (yellow), same semantics as the Training start dialog (selects the plan and begins).
 - Race lane: **dark** (`#161616`), no road texture, no centre divider, narrower (≈18 %), riders **spread across the lane width** (position by kJ; x from a stable per-rider slot), sprites and names in **white tone** (greyscale, brightened), FINISH checker in white/grey, START as a thin grey line, cool-down band `#1c1c1c` with dim pixel clouds; collapsible handle unchanged.
+
+## 24. v22 (Laurent, 2026-10-17). Reference `docs/reference/brand/look-v22.html`.
+- Race lane shows only **START** and **FINISH**; no cool-down caption, no clouds or cacti (the band above the finish stays as the celebration space, unlabelled).
+- **Collision management:** riders are spread across the full lane width on 8 columns; y comes from kJ progress; x is chosen so no sprite overlaps another — the broadcaster keeps each rider's column stable between frames and, when two riders are within one sprite height, moves the later one to the nearest free column (hysteresis 2 s so columns do not flicker). Sprites 40 px, names and watts in white.
