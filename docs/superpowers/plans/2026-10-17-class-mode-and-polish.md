@@ -244,3 +244,13 @@ it('clamps: 0 W → 0, 2000 W → 30 m/s, negative → 0', () => { expect(virtua
 - [ ] **Step 2: Run** — FAIL (until wired). **Step 3: Fix** whatever the e2e exposes (small, in the owning module). **Step 4: Run** — PASS.
 - [ ] **Step 5: README** steps: 11 "Workouts → Class plans shows Session 1 with a `today` badge on 19 Oct; Import .seconds adds the owner's file"; 12 "Training → START → WARM UP → START CLASS: bar shows the interval, laps close on their own, phone vibrates/beeps at each change"; 13 "Power-only sensors: Distance ticks (≈ 23 km/h at 80 W)".
 - [ ] **Step 6: Run** all three commands — green. **Step 7: Commit** `test(e2e): class ride end to end; docs: phone checklist 11–13`.
+
+## Phone verification log
+
+Device: Nothing Phone (1), Chrome. Run: Monday 19 Oct 2026 (steps 11–13 of the README phone checklist; steps 1–10 are logged in the phase-1 plan). Fill the table in after the run.
+
+| Step | Check | Result | Date | Notes |
+|---|---|---|---|---|
+| 11 | Workouts → Class plans shows Session 1 with a `today` badge; tap the selected plan to deselect; Import .seconds adds the owner's file | | | |
+| 12 | Training → START → WARM UP → START CLASS: bar shows the interval, laps close on their own, phone vibrates/beeps at each change; a double tap on START CLASS or just after a change does not skip | | | |
+| 13 | Power-only sensors (no wheel sensor): Distance ticks (about 23 km/h at 80 W) | | | |
